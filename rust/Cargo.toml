@@ -1,0 +1,12 @@
+[package]
+name = "opendds"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+derive_more = "0.99.17"
+schemars = { version = "0.8.12", features = ["smol_str"] }
+serde = "1.0.152"
+serde_json = "1.0.92"

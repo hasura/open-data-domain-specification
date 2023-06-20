@@ -158,15 +158,16 @@ Examples OpenDDS objects:
     "name": "Products",
     "dataType": "Product",
     "capabilities": {
-        "selectable": {
+        "select": {
+            "selectable": true,
             "filterable": true,
             "aggregatable": true,
             "paginatable": true,
             "limitable": true,
         },
-        "insertable": true,
-        "updateable": true,
-        "deletable": true
+        "insert": { "insertable": true },
+        "update": { "updateable": true },
+        "delete": { "deletable": true }
     }
 }
 ```
@@ -180,15 +181,16 @@ Examples OpenDDS objects:
         "type": "Float"
     }],
     "capabilities": {
-        "selectable": {
+        "select": {
+            "selectable": true,
             "filterable": true,
             "aggregatable": true,
             "paginatable": false,
             "limitable": true,
         },
-        "insertable": false,
-        "updateable": false,
-        "deletable": false
+        "insert": { "insertable": false },
+        "update": { "updateable": false },
+        "delete": { "deletable": false }
     }
 }
 ```
@@ -443,6 +445,6 @@ Example:
 
 ## References
 
-Rust data structures: TODO \
-JSONSchema: TODO \
-TypeScript structures: TODO
+Rust data structure: OpenDds in rust/lib.rs \
+TypeScript structures: TODO \
+JSONSchema: TODO
