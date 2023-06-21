@@ -312,19 +312,23 @@ A `relationship` OpenDDS object defines:
         // top-level Product type in BestSellingProducts
         "fieldPath": [],
         // One category can have multiple best sellers
-        "relationshipType": "ARRAY",
-        "fieldMappings": [{
-            "sourcePath": [{ "name": "id" }],
-            "targetPath": [{ "name": "category_id" }]
-        }]
+        "relationshipType": "ARRAY"
     },
-    "argumentMappings": {
-        "argumentName": "bestSellingThreshold",
+    "mappings": [{
         "source": {
-            // Can also be from a field of the source type
-            "value": { "literal": 1000 }
+            "fieldPath": [{ "name": "id" }]
+        },
+        "target": {
+            "modelField": [{ "name": "category_id" }]
         }
-    }
+    }, {
+        "source": {
+            "value": { "literal": 1000 }
+        },
+        "target": {
+            "argument": "bestSellingThreshold"
+        }
+    }]
 }
 ```
 
@@ -442,6 +446,8 @@ Example:
 ```
 
 ## Semantics
+
+TODO
 
 ## References
 

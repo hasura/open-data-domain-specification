@@ -45,7 +45,7 @@ pub struct FieldDefinition {
     pub arguments: Vec<ArgumentDefinition>,
 }
 
-#[derive(Serialize, Deserialize, JsonSchema)]
+#[derive(Serialize, Deserialize, JsonSchema, PartialEq, Eq, Hash, Clone)]
 pub struct ArgumentName(pub String);
 
 #[derive(Serialize, Deserialize, JsonSchema)]
