@@ -34,7 +34,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "453ad9f582a441959e5f0d088b02ce04cfe8d51a8eaf077f12ac6d3e94164ca6"
 
 [[package]]
-name = "opendds"
+name = "open_dds"
 version = "0.1.0"
 dependencies = [
  "derive_more",
