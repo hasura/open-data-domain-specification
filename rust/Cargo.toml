@@ -1,5 +1,5 @@
 [package]
-name = "open_dds"
+name = "open-dds"
 version = "0.1.0"
 edition = "2021"
 
