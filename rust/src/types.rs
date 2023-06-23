@@ -99,5 +99,6 @@ pub enum TypeSource {
 #[serde(rename_all = "camelCase")]
 pub struct FieldSource {
     pub field_source: JsonValue,
+    pub scalar_type: Option<ScalarTypeName>,
     // TODO: Map field arguments
 }
