@@ -35,7 +35,7 @@
           }
         },
         {
-          "title": "HubDataSource",
+          "title": "HasuraHubDataSource",
           "type": "object",
           "required": [
             "connectorConfiguration",
@@ -57,7 +57,7 @@
               "type": "string"
             },
             "connectorConfiguration": {
-              "$ref": "https://pg-ndc-hub.hasura.io/schema"
+              "$ref": "https://postgres-configserv.ddn.hasura.app/schema"
             }
           }
         },
