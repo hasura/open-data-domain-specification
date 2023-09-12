@@ -3,7 +3,12 @@ use std::collections::HashMap;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use crate::{types::{TypeName, FieldName, ArgumentName}, model::ModelName, command::CommandName, expression::ValueExpression};
+use crate::{
+    command::CommandName,
+    expression::ValueExpression,
+    model::ModelName,
+    types::{ArgumentName, FieldName, TypeName},
+};
 
 #[derive(Serialize, Deserialize, JsonSchema)]
 pub struct RelationshipName(pub String);
@@ -25,12 +30,16 @@ pub enum RelationshipType {
 #[derive(Serialize, Deserialize, JsonSchema)]
 #[serde(untagged)]
 pub enum RelationshipTarget {
+    #[serde(rename_all = "camelCase")]
     Model {
         model: ModelName,
         relationship_type: RelationshipType,
+        field_path: Vec<FieldName>,
     },
+    #[serde(rename_all = "camelCase")]
     Command {
         command: CommandName,
+        field_path: Vec<FieldName>,
     },
 }
 
@@ -38,7 +47,7 @@ pub enum RelationshipTarget {
 #[serde(rename_all = "camelCase")]
 pub enum RelationshipMappingSource {
     Value(ValueExpression),
-    FieldPath(Vec<FieldAccess>)
+    FieldPath(Vec<FieldAccess>),
 }
 
 #[derive(Serialize, Deserialize, JsonSchema)]
@@ -52,7 +61,7 @@ pub struct FieldAccess {
 #[serde(rename_all = "camelCase")]
 pub enum RelationshipMappingTarget {
     Argument(ArgumentName),
-    ModelField(Vec<FieldAccess>)
+    ModelField(Vec<FieldAccess>),
 }
 
 #[derive(Serialize, Deserialize, JsonSchema)]
