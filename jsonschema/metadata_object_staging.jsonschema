@@ -1,0 +1,1715 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "MetadataObject",
+  "anyOf": [
+    {
+      "$ref": "#/definitions/HasuraMetadataObject"
+    },
+    {
+      "$ref": "#/definitions/OpenDdsObject"
+    }
+  ],
+  "definitions": {
+    "HasuraMetadataObject": {
+      "oneOf": [
+        {
+          "title": "HasuraHubDataSource",
+          "type": "object",
+          "required": [
+            "connectorConfiguration",
+            "connectorId",
+            "kind",
+            "name"
+          ],
+          "properties": {
+            "kind": {
+              "type": "string",
+              "enum": [
+                "HasuraHubDataSource"
+              ]
+            },
+            "name": {
+              "$ref": "#/definitions/DataSourceName"
+            },
+            "connectorId": {
+              "type": "string"
+            },
+            "connectorConfiguration": {
+              "$ref": "https://postgres-configserv.ddn.hasura.me/schema"
+            }
+          }
+        },
+        {
+          "title": "AuthConfig",
+          "type": "object",
+          "oneOf": [
+            {
+              "type": "object",
+              "required": [
+                "webhook"
+              ],
+              "properties": {
+                "webhook": {
+                  "$ref": "#/definitions/AuthHookConfig"
+                }
+              }
+            },
+            {
+              "type": "object",
+              "required": [
+                "jwt"
+              ],
+              "properties": {
+                "jwt": {
+                  "$ref": "#/definitions/JWTConfig"
+                }
+              }
+            }
+          ],
+          "required": [
+            "kind"
+          ],
+          "properties": {
+            "kind": {
+              "type": "string",
+              "enum": [
+                "AuthConfig"
+              ]
+            },
+            "allowRoleEmulationFor": {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/Role"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "DataSourceName": {
+      "description": "The name of a data source.",
+      "type": "string"
+    },
+    "Role": {
+      "type": "string"
+    },
+    "AuthHookConfig": {
+      "title": "AuthHookConfig",
+      "description": "The config of the Authentication hook",
+      "type": "object",
+      "required": [
+        "webhookUrl"
+      ],
+      "properties": {
+        "webhookUrl": {
+          "type": "string",
+          "format": "uri"
+        },
+        "mode": {
+          "default": "GET",
+          "allOf": [
+            {
+              "$ref": "#/definitions/AuthHookMode"
+            }
+          ]
+        }
+      }
+    },
+    "AuthHookMode": {
+      "title": "AuthHookMode",
+      "type": "string",
+      "enum": [
+        "GET",
+        "POST"
+      ]
+    },
+    "JWTConfig": {
+      "description": "Config to describe how/where the engine should look for the claims within the decoded token.",
+      "type": "object",
+      "anyOf": [
+        {
+          "type": "object",
+          "required": [
+            "claimsMap"
+          ],
+          "properties": {
+            "claimsMap": {
+              "$ref": "#/definitions/ClaimsMap"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "claims_format"
+          ],
+          "properties": {
+            "claims_format": {
+              "description": "Format in which the Hasura claims will be present.",
+              "allOf": [
+                {
+                  "$ref": "#/definitions/ClaimsFormat"
+                }
+              ]
+            },
+            "claims_namespace_path": {
+              "description": "Pointer to lookup the Hasura claims within the decoded claims.",
+              "default": "/https:~1~1hasura.io~1jwt~1claims",
+              "type": "string",
+              "format": "JSON pointer"
+            }
+          }
+        }
+      ],
+      "properties": {
+        "audience": {
+          "description": "Optional validation to check that the `aud` field is a member of the `audience` recieved, otherwise will throw error.",
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        },
+        "issuer": {
+          "description": "Optional validation to check that the `iss` field is a member of the `iss` received, otherwise will throw error.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "allowedSkew": {
+          "description": "Allowed leeway (in seconds) to the `exp` validation to account for clock skew.",
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "uint64",
+          "minimum": 0.0
+        },
+        "header": {
+          "description": "Source of the JWT authentication token.",
+          "default": {
+            "type": "authorization"
+          },
+          "allOf": [
+            {
+              "$ref": "#/definitions/JWTHeader"
+            }
+          ]
+        }
+      }
+    },
+    "JWTHeader": {
+      "description": "Source of the Authorization token",
+      "oneOf": [
+        {
+          "description": "Get the token from the `Authorization` header.",
+          "type": "object",
+          "required": [
+            "type"
+          ],
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": [
+                "authorization"
+              ]
+            }
+          }
+        },
+        {
+          "description": "Get the token from the Cookie header under the specificied cookie name.",
+          "type": "object",
+          "required": [
+            "name",
+            "type"
+          ],
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": [
+                "cookie"
+              ]
+            },
+            "name": {
+              "type": "string"
+            }
+          }
+        },
+        {
+          "description": "Custom header from where the header should be parsed from.",
+          "type": "object",
+          "required": [
+            "name",
+            "type"
+          ],
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": [
+                "customHeader"
+              ]
+            },
+            "name": {
+              "type": "string"
+            }
+          }
+        }
+      ]
+    },
+    "ClaimsMap": {
+      "type": "object",
+      "required": [
+        "x-hasura-allowed-roles",
+        "x-hasura-default-role"
+      ],
+      "properties": {
+        "x-hasura-default-role": {
+          "$ref": "#/definitions/ClaimsMappingEntry_for_Role"
+        },
+        "x-hasura-allowed-roles": {
+          "$ref": "#/definitions/ClaimsMappingEntry_for_Array_of_Role"
+        }
+      }
+    },
+    "ClaimsMappingEntry_for_Role": {
+      "anyOf": [
+        {
+          "description": "Literal value of the claims mapping",
+          "allOf": [
+            {
+              "$ref": "#/definitions/Role"
+            }
+          ]
+        },
+        {
+          "description": "Look up the Hasura claims at the specified JSON Pointer and provide a default value if the lookup fails.",
+          "type": "object",
+          "required": [
+            "path"
+          ],
+          "properties": {
+            "path": {
+              "description": "JSON pointer to find the particular claim in the decoded JWT token.",
+              "type": "string",
+              "format": "JSON pointer"
+            },
+            "default": {
+              "description": "Default value to be used when no value is found when looking up the value using the `path`.",
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/Role"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "ClaimsMappingEntry_for_Array_of_Role": {
+      "anyOf": [
+        {
+          "description": "Literal value of the claims mapping",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Role"
+          }
+        },
+        {
+          "description": "Look up the Hasura claims at the specified JSON Pointer and provide a default value if the lookup fails.",
+          "type": "object",
+          "required": [
+            "path"
+          ],
+          "properties": {
+            "path": {
+              "description": "JSON pointer to find the particular claim in the decoded JWT token.",
+              "type": "string",
+              "format": "JSON pointer"
+            },
+            "default": {
+              "description": "Default value to be used when no value is found when looking up the value using the `path`.",
+              "type": [
+                "array",
+                "null"
+              ],
+              "items": {
+                "$ref": "#/definitions/Role"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "ClaimsMappingEntry_for_SessionVariableValue": {
+      "anyOf": [
+        {
+          "description": "Literal value of the claims mapping",
+          "allOf": [
+            {
+              "$ref": "#/definitions/SessionVariableValue"
+            }
+          ]
+        },
+        {
+          "description": "Look up the Hasura claims at the specified JSON Pointer and provide a default value if the lookup fails.",
+          "type": "object",
+          "required": [
+            "path"
+          ],
+          "properties": {
+            "path": {
+              "description": "JSON pointer to find the particular claim in the decoded JWT token.",
+              "type": "string",
+              "format": "JSON pointer"
+            },
+            "default": {
+              "description": "Default value to be used when no value is found when looking up the value using the `path`.",
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/SessionVariableValue"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "SessionVariableValue": {
+      "type": "string"
+    },
+    "ClaimsFormat": {
+      "oneOf": [
+        {
+          "description": "Claims will be in the JSON format.",
+          "type": "string",
+          "enum": [
+            "json"
+          ]
+        },
+        {
+          "description": "Claims will be in the Stringified JSON format.",
+          "type": "string",
+          "enum": [
+            "stringifiedJson"
+          ]
+        }
+      ]
+    },
+    "JWTKeyConfig": {
+      "description": "JWT Secret config according to which the incoming JWT will be decoded.",
+      "type": "object",
+      "required": [
+        "key",
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "$ref": "#/definitions/Algorithm"
+        },
+        "key": {
+          "type": "string"
+        }
+      }
+    },
+    "Algorithm": {
+      "oneOf": [
+        {
+          "description": "HMAC using SHA-256",
+          "type": "string",
+          "enum": [
+            "HS256"
+          ]
+        },
+        {
+          "description": "HMAC using SHA-384",
+          "type": "string",
+          "enum": [
+            "HS384"
+          ]
+        },
+        {
+          "description": "HMAC using SHA-512",
+          "type": "string",
+          "enum": [
+            "HS512"
+          ]
+        },
+        {
+          "description": "ECDSA using SHA-256",
+          "type": "string",
+          "enum": [
+            "ES256"
+          ]
+        },
+        {
+          "description": "ECDSA using SHA-384",
+          "type": "string",
+          "enum": [
+            "ES384"
+          ]
+        },
+        {
+          "description": "RSASSA-PKCS1-v1_5 using SHA-256",
+          "type": "string",
+          "enum": [
+            "RS256"
+          ]
+        },
+        {
+          "description": "RSASSA-PKCS1-v1_5 using SHA-384",
+          "type": "string",
+          "enum": [
+            "RS384"
+          ]
+        },
+        {
+          "description": "RSASSA-PKCS1-v1_5 using SHA-512",
+          "type": "string",
+          "enum": [
+            "RS512"
+          ]
+        },
+        {
+          "description": "RSASSA-PSS using SHA-256",
+          "type": "string",
+          "enum": [
+            "PS256"
+          ]
+        },
+        {
+          "description": "RSASSA-PSS using SHA-384",
+          "type": "string",
+          "enum": [
+            "PS384"
+          ]
+        },
+        {
+          "description": "RSASSA-PSS using SHA-512",
+          "type": "string",
+          "enum": [
+            "PS512"
+          ]
+        },
+        {
+          "description": "Edwards-curve Digital Signature Algorithm (EdDSA)",
+          "type": "string",
+          "enum": [
+            "EdDSA"
+          ]
+        }
+      ]
+    },
+    "OpenDdsObject": {
+      "oneOf": [
+        {
+          "title": "DataSource",
+          "type": "object",
+          "required": [
+            "dataConnectorUrl",
+            "kind",
+            "name"
+          ],
+          "properties": {
+            "kind": {
+              "type": "string",
+              "enum": [
+                "DataSource"
+              ]
+            },
+            "name": {
+              "$ref": "#/definitions/DataSourceName"
+            },
+            "dataConnectorUrl": {
+              "$ref": "#/definitions/DataConnectorUrl"
+            },
+            "schema": {
+              "default": {
+                "scalar_types": {},
+                "object_types": {},
+                "collections": [],
+                "functions": [],
+                "procedures": []
+              },
+              "allOf": [
+                {
+                  "$ref": "https://raw.githubusercontent.com/hasura/ndc-spec/main/ndc-client/tests/json_schema/schema_response.jsonschema"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "title": "ObjectType",
+          "description": "Definition of a user-defined Open DD object type.",
+          "type": "object",
+          "required": [
+            "fields",
+            "kind",
+            "name"
+          ],
+          "properties": {
+            "kind": {
+              "type": "string",
+              "enum": [
+                "ObjectType"
+              ]
+            },
+            "name": {
+              "$ref": "#/definitions/TypeName"
+            },
+            "fields": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/FieldDefinition"
+              }
+            },
+            "globalID": {
+              "type": [
+                "array",
+                "null"
+              ],
+              "items": {
+                "$ref": "#/definitions/FieldName"
+              }
+            },
+            "graphql": {
+              "description": "GraphQl configuration for this object.",
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/ObjectTypeGraphQLConfiguration"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "title": "ScalarType",
+          "description": "Definition of a user-defined scalar type that that has opaque semantics.",
+          "type": "object",
+          "required": [
+            "kind",
+            "name"
+          ],
+          "properties": {
+            "kind": {
+              "type": "string",
+              "enum": [
+                "ScalarType"
+              ]
+            },
+            "name": {
+              "description": "The OpenDD name of this type.",
+              "allOf": [
+                {
+                  "$ref": "#/definitions/TypeName"
+                }
+              ]
+            },
+            "graphql": {
+              "description": "The name of the GraphQl scalar type to use for",
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/ScalarTypeGraphQLConfiguration"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "title": "DataConnectorScalarRepresentation",
+          "description": "The representation of a data source scalar in terms of Open DD types",
+          "type": "object",
+          "required": [
+            "dataSource",
+            "kind",
+            "representation",
+            "scalarType"
+          ],
+          "properties": {
+            "kind": {
+              "type": "string",
+              "enum": [
+                "DataConnectorScalarRepresentation"
+              ]
+            },
+            "dataSource": {
+              "$ref": "#/definitions/DataSourceName"
+            },
+            "scalarType": {
+              "type": "string"
+            },
+            "representation": {
+              "$ref": "#/definitions/Type"
+            },
+            "graphql": {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/DataSourceScalarGraphQLConfiguration"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "title": "Model",
+          "description": "The definition of a data model. A data model is a collection of objects of a particular type. Models can support one or more CRUD operations.",
+          "type": "object",
+          "required": [
+            "dataType",
+            "kind",
+            "name"
+          ],
+          "properties": {
+            "kind": {
+              "type": "string",
+              "enum": [
+                "Model"
+              ]
+            },
+            "name": {
+              "$ref": "#/definitions/ModelName"
+            },
+            "dataType": {
+              "description": "The type of the objects of which this model is a collection.",
+              "allOf": [
+                {
+                  "$ref": "#/definitions/TypeName"
+                }
+              ]
+            },
+            "globalIDSource": {
+              "default": false,
+              "type": "boolean"
+            },
+            "arguments": {
+              "default": [],
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/ArgumentDefinition"
+              }
+            },
+            "source": {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/ModelSource"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "graphql": {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/ModelGraphQlDefinition"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "title": "Command",
+          "description": "The definition of a command. A command is a user-defined operation which can take arguments and returns an output. The semantics of a command are opaque to the Open DD specification.",
+          "type": "object",
+          "required": [
+            "kind",
+            "name",
+            "outputType"
+          ],
+          "properties": {
+            "kind": {
+              "type": "string",
+              "enum": [
+                "Command"
+              ]
+            },
+            "name": {
+              "$ref": "#/definitions/CommandName"
+            },
+            "outputType": {
+              "description": "The type of the objects which is returned as the output.",
+              "allOf": [
+                {
+                  "$ref": "#/definitions/Type"
+                }
+              ]
+            },
+            "arguments": {
+              "default": [],
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/ArgumentDefinition"
+              }
+            },
+            "source": {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/CommandSource"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "graphql": {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/CommandGraphQlDefinition"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "title": "Relationship",
+          "type": "object",
+          "required": [
+            "kind",
+            "mappings",
+            "name",
+            "source",
+            "target"
+          ],
+          "properties": {
+            "kind": {
+              "type": "string",
+              "enum": [
+                "Relationship"
+              ]
+            },
+            "name": {
+              "$ref": "#/definitions/RelationshipName"
+            },
+            "source": {
+              "$ref": "#/definitions/TypeName"
+            },
+            "target": {
+              "$ref": "#/definitions/RelationshipTarget"
+            },
+            "mappings": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/RelationshipMapping"
+              }
+            }
+          }
+        },
+        {
+          "title": "TypeOutputPermissions",
+          "type": "object",
+          "required": [
+            "kind",
+            "permissions",
+            "typeName"
+          ],
+          "properties": {
+            "kind": {
+              "type": "string",
+              "enum": [
+                "TypeOutputPermissions"
+              ]
+            },
+            "typeName": {
+              "$ref": "#/definitions/TypeName"
+            },
+            "permissions": {
+              "type": "object",
+              "additionalProperties": {
+                "$ref": "#/definitions/TypeOutputPermission"
+              }
+            }
+          }
+        },
+        {
+          "title": "ModelSelectPermissions",
+          "description": "Role-Permission map for a model",
+          "type": "object",
+          "required": [
+            "kind",
+            "modelName",
+            "permissions"
+          ],
+          "properties": {
+            "kind": {
+              "type": "string",
+              "enum": [
+                "ModelSelectPermissions"
+              ]
+            },
+            "modelName": {
+              "$ref": "#/definitions/ModelName"
+            },
+            "permissions": {
+              "type": "object",
+              "additionalProperties": {
+                "$ref": "#/definitions/SelectPermission"
+              }
+            }
+          }
+        },
+        {
+          "title": "CommandPermissions",
+          "description": "Role-Permission map for a command",
+          "type": "object",
+          "required": [
+            "commandName",
+            "kind",
+            "permissions"
+          ],
+          "properties": {
+            "kind": {
+              "type": "string",
+              "enum": [
+                "CommandPermissions"
+              ]
+            },
+            "commandName": {
+              "$ref": "#/definitions/CommandName"
+            },
+            "permissions": {
+              "type": "object",
+              "additionalProperties": {
+                "$ref": "#/definitions/CommandPermission"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "DataConnectorUrl": {
+      "type": "object",
+      "required": [
+        "url"
+      ],
+      "properties": {
+        "url": {
+          "type": "string"
+        },
+        "reads": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "writes": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "TypeName": {
+      "description": "The name of a user-defined Open DDS type.",
+      "type": "string"
+    },
+    "FieldDefinition": {
+      "title": "ObjectFieldDefinition",
+      "description": "The definition of a field in a user-defined object type.",
+      "type": "object",
+      "required": [
+        "name",
+        "type"
+      ],
+      "properties": {
+        "name": {
+          "$ref": "#/definitions/FieldName"
+        },
+        "type": {
+          "$ref": "#/definitions/Type"
+        }
+      }
+    },
+    "FieldName": {
+      "description": "The name of a field in a user-defined object type.",
+      "type": "string"
+    },
+    "Type": {
+      "description": "Reference to an Open DD type.",
+      "anyOf": [
+        {
+          "$ref": "#/definitions/InbuiltType"
+        },
+        {
+          "$ref": "#/definitions/TypeName"
+        }
+      ]
+    },
+    "InbuiltType": {
+      "oneOf": [
+        {
+          "type": "string",
+          "enum": [
+            "ID",
+            "Int",
+            "Float",
+            "Boolean",
+            "String"
+          ]
+        },
+        {
+          "title": "Nullable",
+          "type": "object",
+          "required": [
+            "Nullable"
+          ],
+          "properties": {
+            "Nullable": {
+              "$ref": "#/definitions/Type"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "title": "Array",
+          "type": "object",
+          "required": [
+            "Array"
+          ],
+          "properties": {
+            "Array": {
+              "$ref": "#/definitions/Type"
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "ObjectTypeGraphQLConfiguration": {
+      "title": "ObjectTypeGraphQLConfiguration",
+      "description": "GraphQL configuration of an Open DD object type.",
+      "type": "object",
+      "properties": {
+        "typeName": {
+          "description": "The name of the GraphQl type to use for this object.",
+          "anyOf": [
+            {
+              "$ref": "#/definitions/GraphQlTypeName"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "GraphQlTypeName": {
+      "type": "string"
+    },
+    "ScalarTypeGraphQLConfiguration": {
+      "title": "ScalarTypeGraphQLConfiguration",
+      "description": "GraphQL configuration of an Open DD scalar type",
+      "type": "object",
+      "required": [
+        "typeName"
+      ],
+      "properties": {
+        "typeName": {
+          "description": "The name of the GraphQl type to use for this scalar.",
+          "allOf": [
+            {
+              "$ref": "#/definitions/GraphQlTypeName"
+            }
+          ]
+        }
+      }
+    },
+    "DataSourceScalarGraphQLConfiguration": {
+      "title": "DataSourceScalarGraphQLConfiguration",
+      "description": "GraphQL configuration of a data source scalar",
+      "type": "object",
+      "properties": {
+        "comparisonExpressionTypeName": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/GraphQlTypeName"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "ModelName": {
+      "description": "The name of data model.",
+      "type": "string"
+    },
+    "ArgumentDefinition": {
+      "title": "ArgumentDefinition",
+      "description": "The definition of an argument for a field, command, or model.",
+      "type": "object",
+      "required": [
+        "name",
+        "type"
+      ],
+      "properties": {
+        "name": {
+          "$ref": "#/definitions/ArgumentName"
+        },
+        "type": {
+          "$ref": "#/definitions/Type"
+        }
+      }
+    },
+    "ArgumentName": {
+      "type": "string"
+    },
+    "ModelSource": {
+      "title": "ModelSource",
+      "description": "Description of how a model maps to a particular data source",
+      "type": "object",
+      "required": [
+        "collection",
+        "dataSource"
+      ],
+      "properties": {
+        "dataSource": {
+          "description": "The name of the data source backing this model.",
+          "allOf": [
+            {
+              "$ref": "#/definitions/DataSourceName"
+            }
+          ]
+        },
+        "collection": {
+          "description": "The collection in the data connector that backs this model.",
+          "type": "string"
+        },
+        "typeMappings": {
+          "description": "How the various types used in this model correspond to entities in the data source.",
+          "default": {},
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/TypeMapping"
+          }
+        },
+        "argumentMappings": {
+          "default": {},
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "TypeMapping": {
+      "anyOf": [
+        {
+          "title": "ObjectTypeMapping",
+          "type": "object",
+          "required": [
+            "fieldMappings"
+          ],
+          "properties": {
+            "fieldMappings": {
+              "type": "object",
+              "additionalProperties": {
+                "$ref": "#/definitions/FieldMapping"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "FieldMapping": {
+      "title": "ObjectFieldMapping",
+      "type": "object",
+      "required": [
+        "column"
+      ],
+      "properties": {
+        "column": {
+          "type": "string"
+        }
+      }
+    },
+    "ModelGraphQlDefinition": {
+      "title": "ModelGraphQlDefinition",
+      "description": "The definition of the GraphQL API component specific to a model.",
+      "type": "object",
+      "required": [
+        "selectUniques"
+      ],
+      "properties": {
+        "selectUniques": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/SelectUniqueGraphQlDefinition"
+          }
+        },
+        "selectMany": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/SelectManyGraphQlDefinition"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "argumentsInputField": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/GraphQlFieldName"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "argumentsInputType": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/GraphQlTypeName"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "filterExpressionType": {
+          "description": "The type name of the filter boolean expression.",
+          "anyOf": [
+            {
+              "$ref": "#/definitions/GraphQlTypeName"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "orderByExpressionType": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/GraphQlTypeName"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "SelectUniqueGraphQlDefinition": {
+      "title": "SelectUniqueGraphQlDefinition",
+      "description": "The definition of the GraphQL API for selecting a unique row/object from a model.",
+      "type": "object",
+      "required": [
+        "queryRootField",
+        "uniqueIdentifier"
+      ],
+      "properties": {
+        "queryRootField": {
+          "description": "The name of the query root field for this API.",
+          "allOf": [
+            {
+              "$ref": "#/definitions/GraphQlFieldName"
+            }
+          ]
+        },
+        "uniqueIdentifier": {
+          "description": "A set of fields which can uniquely identify a row/object in the model.",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/FieldName"
+          }
+        }
+      }
+    },
+    "GraphQlFieldName": {
+      "description": "The name of a GraphQL object field.",
+      "type": "string"
+    },
+    "SelectManyGraphQlDefinition": {
+      "title": "SelectManyGraphQlDefinition",
+      "description": "The definition of the GraphQL API for selecting rows from a model.",
+      "type": "object",
+      "required": [
+        "queryRootField"
+      ],
+      "properties": {
+        "queryRootField": {
+          "description": "The name of the query root field for this API.",
+          "allOf": [
+            {
+              "$ref": "#/definitions/GraphQlFieldName"
+            }
+          ]
+        }
+      }
+    },
+    "CommandName": {
+      "description": "The name of a command.",
+      "type": "string"
+    },
+    "CommandSource": {
+      "title": "CommandSource",
+      "description": "Description of how a command maps to a particular data source",
+      "type": "object",
+      "oneOf": [
+        {
+          "title": "Function",
+          "type": "object",
+          "required": [
+            "function"
+          ],
+          "properties": {
+            "function": {
+              "type": "string"
+            }
+          }
+        },
+        {
+          "title": "Procedure",
+          "type": "object",
+          "required": [
+            "procedure"
+          ],
+          "properties": {
+            "procedure": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "required": [
+        "dataSource"
+      ],
+      "properties": {
+        "dataSource": {
+          "description": "The name of the data source backing this command.",
+          "allOf": [
+            {
+              "$ref": "#/definitions/DataSourceName"
+            }
+          ]
+        },
+        "typeMappings": {
+          "description": "How the various types used in this command correspond to entities in the data source.",
+          "default": {},
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/TypeMapping"
+          }
+        },
+        "argumentMappings": {
+          "default": {},
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "CommandGraphQlDefinition": {
+      "title": "CommandGraphQlDefinition",
+      "description": "The definition of the GraphQL API component specific to a command.",
+      "type": "object",
+      "required": [
+        "rootFieldKind",
+        "rootFieldName"
+      ],
+      "properties": {
+        "rootFieldName": {
+          "description": "The name of the graphql root field to use for this command.",
+          "allOf": [
+            {
+              "$ref": "#/definitions/GraphQlFieldName"
+            }
+          ]
+        },
+        "rootFieldKind": {
+          "description": "Whether to put this command in the Query or Mutation root of the GraphQL API.",
+          "allOf": [
+            {
+              "$ref": "#/definitions/GraphQlRootFieldKind"
+            }
+          ]
+        }
+      }
+    },
+    "GraphQlRootFieldKind": {
+      "type": "string",
+      "enum": [
+        "Query",
+        "Mutation"
+      ]
+    },
+    "RelationshipName": {
+      "description": "The name of the GraphQL relationship field.",
+      "type": "string"
+    },
+    "RelationshipTarget": {
+      "anyOf": [
+        {
+          "title": "ModelRelationshipTarget",
+          "type": "object",
+          "required": [
+            "modelName",
+            "relationshipType"
+          ],
+          "properties": {
+            "modelName": {
+              "$ref": "#/definitions/ModelName"
+            },
+            "relationshipType": {
+              "$ref": "#/definitions/RelationshipType"
+            }
+          }
+        }
+      ]
+    },
+    "RelationshipType": {
+      "title": "RelationshipType",
+      "description": "Type of the relationship.",
+      "oneOf": [
+        {
+          "description": "Select one related object from the target.",
+          "type": "string",
+          "enum": [
+            "Object"
+          ]
+        },
+        {
+          "description": "Select multiple related objects from the target.",
+          "type": "string",
+          "enum": [
+            "Array"
+          ]
+        }
+      ]
+    },
+    "RelationshipMapping": {
+      "title": "RelationshipMapping",
+      "type": "object",
+      "required": [
+        "source",
+        "target"
+      ],
+      "properties": {
+        "source": {
+          "$ref": "#/definitions/RelationshipMappingSource"
+        },
+        "target": {
+          "$ref": "#/definitions/RelationshipMappingTarget"
+        }
+      }
+    },
+    "RelationshipMappingSource": {
+      "title": "RelationshipMappingSource",
+      "oneOf": [
+        {
+          "title": "SourceValue",
+          "type": "object",
+          "required": [
+            "value"
+          ],
+          "properties": {
+            "value": {
+              "$ref": "#/definitions/ValueExpression"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "title": "SourceField",
+          "type": "object",
+          "required": [
+            "fieldPath"
+          ],
+          "properties": {
+            "fieldPath": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/FieldAccess"
+              }
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "ValueExpression": {
+      "oneOf": [
+        {
+          "title": "Literal",
+          "type": "object",
+          "required": [
+            "literal"
+          ],
+          "properties": {
+            "literal": true
+          },
+          "additionalProperties": false
+        },
+        {
+          "title": "SessionVariable",
+          "type": "object",
+          "required": [
+            "sessionVariable"
+          ],
+          "properties": {
+            "sessionVariable": {
+              "$ref": "#/definitions/OpenDdsSessionVariable"
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "OpenDdsSessionVariable": {
+      "description": "Used to represent the name of a session variable, like \"x-hasura-role\".",
+      "type": "string"
+    },
+    "FieldAccess": {
+      "title": "RelationshipSourceFieldAccess",
+      "type": "object",
+      "required": [
+        "fieldName"
+      ],
+      "properties": {
+        "fieldName": {
+          "$ref": "#/definitions/FieldName"
+        }
+      }
+    },
+    "RelationshipMappingTarget": {
+      "title": "RelationshipMappingTarget",
+      "oneOf": [
+        {
+          "title": "TargetArgument",
+          "type": "object",
+          "required": [
+            "argument"
+          ],
+          "properties": {
+            "argument": {
+              "$ref": "#/definitions/ArgumentName"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "title": "TargetModelField",
+          "type": "object",
+          "required": [
+            "modelField"
+          ],
+          "properties": {
+            "modelField": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/FieldAccess"
+              }
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "TypeOutputPermission": {
+      "title": "TypeOutputPermission",
+      "description": "One unit of output permission",
+      "type": "object",
+      "required": [
+        "fields"
+      ],
+      "properties": {
+        "fields": {
+          "description": "Fields of the type that are accessible for a role",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/FieldName"
+          }
+        }
+      }
+    },
+    "SelectPermission": {
+      "title": "SelectPermission",
+      "type": "object",
+      "required": [
+        "filter"
+      ],
+      "properties": {
+        "filter": {
+          "description": "Filter expression when selecting rows for this model. Null filter implies all rows are selectable.",
+          "allOf": [
+            {
+              "$ref": "#/definitions/NullableModelPredicate"
+            }
+          ]
+        }
+      }
+    },
+    "NullableModelPredicate": {
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "$ref": "#/definitions/ModelPredicate"
+        }
+      ]
+    },
+    "ModelPredicate": {
+      "oneOf": [
+        {
+          "title": "FieldComparison",
+          "type": "object",
+          "required": [
+            "fieldComparison"
+          ],
+          "properties": {
+            "fieldComparison": {
+              "type": "object",
+              "required": [
+                "field",
+                "operator"
+              ],
+              "properties": {
+                "field": {
+                  "$ref": "#/definitions/FieldName"
+                },
+                "operator": {
+                  "$ref": "#/definitions/OperatorName"
+                },
+                "value": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/definitions/ValueExpression"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "title": "Relationship",
+          "type": "object",
+          "required": [
+            "relationship"
+          ],
+          "properties": {
+            "relationship": {
+              "type": "object",
+              "required": [
+                "name"
+              ],
+              "properties": {
+                "name": {
+                  "$ref": "#/definitions/RelationshipName"
+                },
+                "predicate": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/definitions/ModelPredicate"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "title": "And",
+          "type": "object",
+          "required": [
+            "and"
+          ],
+          "properties": {
+            "and": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/ModelPredicate"
+              }
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "title": "Or",
+          "type": "object",
+          "required": [
+            "or"
+          ],
+          "properties": {
+            "or": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/ModelPredicate"
+              }
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "title": "Not",
+          "type": "object",
+          "required": [
+            "not"
+          ],
+          "properties": {
+            "not": {
+              "$ref": "#/definitions/ModelPredicate"
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "OperatorName": {
+      "type": "string"
+    },
+    "CommandPermission": {
+      "title": "CommandPermission",
+      "type": "object",
+      "required": [
+        "allowExecution"
+      ],
+      "properties": {
+        "allowExecution": {
+          "type": "boolean"
+        }
+      }
+    }
+  }
+}
