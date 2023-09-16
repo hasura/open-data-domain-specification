@@ -13,28 +13,6 @@
     "HasuraMetadataObject": {
       "oneOf": [
         {
-          "title": "Collection",
-          "type": "object",
-          "required": [
-            "kind",
-            "objects"
-          ],
-          "properties": {
-            "kind": {
-              "type": "string",
-              "enum": [
-                "Collection"
-              ]
-            },
-            "objects": {
-              "type": "array",
-              "items": {
-                "$ref": "#/definitions/MetadataObject"
-              }
-            }
-          }
-        },
-        {
           "title": "HasuraHubDataSource",
           "type": "object",
           "required": [
@@ -75,6 +53,17 @@
                   "$ref": "#/definitions/AuthHookConfig"
                 }
               }
+            },
+            {
+              "type": "object",
+              "required": [
+                "jwt"
+              ],
+              "properties": {
+                "jwt": {
+                  "$ref": "#/definitions/JWTConfig"
+                }
+              }
             }
           ],
           "required": [
@@ -101,13 +90,426 @@
         }
       ]
     },
-    "MetadataObject": {
+    "DataSourceName": {
+      "description": "The name of a data source.",
+      "type": "string"
+    },
+    "Role": {
+      "type": "string"
+    },
+    "AuthHookConfig": {
+      "title": "AuthHookConfig",
+      "description": "The config of the Authentication hook",
+      "type": "object",
+      "required": [
+        "webhookUrl"
+      ],
+      "properties": {
+        "webhookUrl": {
+          "type": "string",
+          "format": "uri"
+        },
+        "mode": {
+          "default": "GET",
+          "allOf": [
+            {
+              "$ref": "#/definitions/AuthHookMode"
+            }
+          ]
+        }
+      }
+    },
+    "AuthHookMode": {
+      "title": "AuthHookMode",
+      "type": "string",
+      "enum": [
+        "GET",
+        "POST"
+      ]
+    },
+    "JWTConfig": {
+      "description": "Config to describe how/where the engine should look for the claims within the decoded token.",
+      "type": "object",
       "anyOf": [
         {
-          "$ref": "#/definitions/HasuraMetadataObject"
+          "type": "object",
+          "required": [
+            "claimsMap"
+          ],
+          "properties": {
+            "claimsMap": {
+              "$ref": "#/definitions/ClaimsMap"
+            }
+          }
         },
         {
-          "$ref": "#/definitions/OpenDdsObject"
+          "type": "object",
+          "required": [
+            "claims_format"
+          ],
+          "properties": {
+            "claims_format": {
+              "description": "Format in which the Hasura claims will be present.",
+              "allOf": [
+                {
+                  "$ref": "#/definitions/ClaimsFormat"
+                }
+              ]
+            },
+            "claims_namespace_path": {
+              "description": "Pointer to lookup the Hasura claims within the decoded claims.",
+              "default": "/https:~1~1hasura.io~1jwt~1claims",
+              "type": "string",
+              "format": "JSON pointer"
+            }
+          }
+        }
+      ],
+      "properties": {
+        "audience": {
+          "description": "Optional validation to check that the `aud` field is a member of the `audience` recieved, otherwise will throw error.",
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        },
+        "issuer": {
+          "description": "Optional validation to check that the `iss` field is a member of the `iss` received, otherwise will throw error.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "allowedSkew": {
+          "description": "Allowed leeway (in seconds) to the `exp` validation to account for clock skew.",
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "uint64",
+          "minimum": 0.0
+        },
+        "header": {
+          "description": "Source of the JWT authentication token.",
+          "default": {
+            "type": "authorization"
+          },
+          "allOf": [
+            {
+              "$ref": "#/definitions/JWTHeader"
+            }
+          ]
+        }
+      }
+    },
+    "JWTHeader": {
+      "description": "Source of the Authorization token",
+      "oneOf": [
+        {
+          "description": "Get the token from the `Authorization` header.",
+          "type": "object",
+          "required": [
+            "type"
+          ],
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": [
+                "authorization"
+              ]
+            }
+          }
+        },
+        {
+          "description": "Get the token from the Cookie header under the specificied cookie name.",
+          "type": "object",
+          "required": [
+            "name",
+            "type"
+          ],
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": [
+                "cookie"
+              ]
+            },
+            "name": {
+              "type": "string"
+            }
+          }
+        },
+        {
+          "description": "Custom header from where the header should be parsed from.",
+          "type": "object",
+          "required": [
+            "name",
+            "type"
+          ],
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": [
+                "customHeader"
+              ]
+            },
+            "name": {
+              "type": "string"
+            }
+          }
+        }
+      ]
+    },
+    "ClaimsMap": {
+      "type": "object",
+      "required": [
+        "x-hasura-allowed-roles",
+        "x-hasura-default-role"
+      ],
+      "properties": {
+        "x-hasura-default-role": {
+          "$ref": "#/definitions/ClaimsMappingEntry_for_Role"
+        },
+        "x-hasura-allowed-roles": {
+          "$ref": "#/definitions/ClaimsMappingEntry_for_Array_of_Role"
+        }
+      }
+    },
+    "ClaimsMappingEntry_for_Role": {
+      "anyOf": [
+        {
+          "description": "Literal value of the claims mapping",
+          "allOf": [
+            {
+              "$ref": "#/definitions/Role"
+            }
+          ]
+        },
+        {
+          "description": "Look up the Hasura claims at the specified JSON Pointer and provide a default value if the lookup fails.",
+          "type": "object",
+          "required": [
+            "path"
+          ],
+          "properties": {
+            "path": {
+              "description": "JSON pointer to find the particular claim in the decoded JWT token.",
+              "type": "string",
+              "format": "JSON pointer"
+            },
+            "default": {
+              "description": "Default value to be used when no value is found when looking up the value using the `path`.",
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/Role"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "ClaimsMappingEntry_for_Array_of_Role": {
+      "anyOf": [
+        {
+          "description": "Literal value of the claims mapping",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Role"
+          }
+        },
+        {
+          "description": "Look up the Hasura claims at the specified JSON Pointer and provide a default value if the lookup fails.",
+          "type": "object",
+          "required": [
+            "path"
+          ],
+          "properties": {
+            "path": {
+              "description": "JSON pointer to find the particular claim in the decoded JWT token.",
+              "type": "string",
+              "format": "JSON pointer"
+            },
+            "default": {
+              "description": "Default value to be used when no value is found when looking up the value using the `path`.",
+              "type": [
+                "array",
+                "null"
+              ],
+              "items": {
+                "$ref": "#/definitions/Role"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "ClaimsMappingEntry_for_SessionVariableValue": {
+      "anyOf": [
+        {
+          "description": "Literal value of the claims mapping",
+          "allOf": [
+            {
+              "$ref": "#/definitions/SessionVariableValue"
+            }
+          ]
+        },
+        {
+          "description": "Look up the Hasura claims at the specified JSON Pointer and provide a default value if the lookup fails.",
+          "type": "object",
+          "required": [
+            "path"
+          ],
+          "properties": {
+            "path": {
+              "description": "JSON pointer to find the particular claim in the decoded JWT token.",
+              "type": "string",
+              "format": "JSON pointer"
+            },
+            "default": {
+              "description": "Default value to be used when no value is found when looking up the value using the `path`.",
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/SessionVariableValue"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "SessionVariableValue": {
+      "type": "string"
+    },
+    "ClaimsFormat": {
+      "oneOf": [
+        {
+          "description": "Claims will be in the JSON format.",
+          "type": "string",
+          "enum": [
+            "json"
+          ]
+        },
+        {
+          "description": "Claims will be in the Stringified JSON format.",
+          "type": "string",
+          "enum": [
+            "stringifiedJson"
+          ]
+        }
+      ]
+    },
+    "JWTKeyConfig": {
+      "description": "JWT Secret config according to which the incoming JWT will be decoded.",
+      "type": "object",
+      "required": [
+        "key",
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "$ref": "#/definitions/Algorithm"
+        },
+        "key": {
+          "type": "string"
+        }
+      }
+    },
+    "Algorithm": {
+      "oneOf": [
+        {
+          "description": "HMAC using SHA-256",
+          "type": "string",
+          "enum": [
+            "HS256"
+          ]
+        },
+        {
+          "description": "HMAC using SHA-384",
+          "type": "string",
+          "enum": [
+            "HS384"
+          ]
+        },
+        {
+          "description": "HMAC using SHA-512",
+          "type": "string",
+          "enum": [
+            "HS512"
+          ]
+        },
+        {
+          "description": "ECDSA using SHA-256",
+          "type": "string",
+          "enum": [
+            "ES256"
+          ]
+        },
+        {
+          "description": "ECDSA using SHA-384",
+          "type": "string",
+          "enum": [
+            "ES384"
+          ]
+        },
+        {
+          "description": "RSASSA-PKCS1-v1_5 using SHA-256",
+          "type": "string",
+          "enum": [
+            "RS256"
+          ]
+        },
+        {
+          "description": "RSASSA-PKCS1-v1_5 using SHA-384",
+          "type": "string",
+          "enum": [
+            "RS384"
+          ]
+        },
+        {
+          "description": "RSASSA-PKCS1-v1_5 using SHA-512",
+          "type": "string",
+          "enum": [
+            "RS512"
+          ]
+        },
+        {
+          "description": "RSASSA-PSS using SHA-256",
+          "type": "string",
+          "enum": [
+            "PS256"
+          ]
+        },
+        {
+          "description": "RSASSA-PSS using SHA-384",
+          "type": "string",
+          "enum": [
+            "PS384"
+          ]
+        },
+        {
+          "description": "RSASSA-PSS using SHA-512",
+          "type": "string",
+          "enum": [
+            "PS512"
+          ]
+        },
+        {
+          "description": "Edwards-curve Digital Signature Algorithm (EdDSA)",
+          "type": "string",
+          "enum": [
+            "EdDSA"
+          ]
         }
       ]
     },
@@ -473,15 +875,58 @@
               }
             }
           }
+        },
+        {
+          "title": "CommandPermissions",
+          "description": "Role-Permission map for a command",
+          "type": "object",
+          "required": [
+            "commandName",
+            "kind",
+            "permissions"
+          ],
+          "properties": {
+            "kind": {
+              "type": "string",
+              "enum": [
+                "CommandPermissions"
+              ]
+            },
+            "commandName": {
+              "$ref": "#/definitions/CommandName"
+            },
+            "permissions": {
+              "type": "object",
+              "additionalProperties": {
+                "$ref": "#/definitions/CommandPermission"
+              }
+            }
+          }
         }
       ]
     },
-    "DataSourceName": {
-      "description": "The name of a data source.",
-      "type": "string"
-    },
     "DataConnectorUrl": {
-      "type": "string"
+      "type": "object",
+      "required": [
+        "url"
+      ],
+      "properties": {
+        "url": {
+          "type": "string"
+        },
+        "reads": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "writes": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
     },
     "TypeName": {
       "description": "The name of a user-defined Open DDS type.",
@@ -1044,16 +1489,7 @@
     },
     "OpenDdsSessionVariable": {
       "description": "Used to represent the name of a session variable, like \"x-hasura-role\".",
-      "type": "object",
-      "required": [
-        "suffix"
-      ],
-      "properties": {
-        "suffix": {
-          "description": "The suffix part of the session variable, if the prefix is assumed to be \"x-hasura-\". For example, the session variable `x-hasura-role` can be represented in rust, as ```SessionVariable {suffix: \"role\"}```",
-          "type": "string"
-        }
-      }
+      "type": "string"
     },
     "FieldAccess": {
       "title": "RelationshipSourceFieldAccess",
@@ -1121,19 +1557,29 @@
     "SelectPermission": {
       "title": "SelectPermission",
       "type": "object",
+      "required": [
+        "filter"
+      ],
       "properties": {
         "filter": {
-          "description": "Filter expression when selecting rows for this model. Missing filter implies all rows are selectable.",
-          "anyOf": [
+          "description": "Filter expression when selecting rows for this model. Null filter implies all rows are selectable.",
+          "allOf": [
             {
-              "$ref": "#/definitions/ModelPredicate"
-            },
-            {
-              "type": "null"
+              "$ref": "#/definitions/NullableModelPredicate"
             }
           ]
         }
       }
+    },
+    "NullableModelPredicate": {
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "$ref": "#/definitions/ModelPredicate"
+        }
+      ]
     },
     "ModelPredicate": {
       "oneOf": [
@@ -1253,38 +1699,17 @@
     "OperatorName": {
       "type": "string"
     },
-    "Role": {
-      "type": "string"
-    },
-    "AuthHookConfig": {
-      "title": "AuthHookConfig",
-      "description": "The config of the Authentication hook",
+    "CommandPermission": {
+      "title": "CommandPermission",
       "type": "object",
       "required": [
-        "webhookUrl"
+        "allowExecution"
       ],
       "properties": {
-        "webhookUrl": {
-          "type": "string",
-          "format": "uri"
-        },
-        "mode": {
-          "default": "GET",
-          "allOf": [
-            {
-              "$ref": "#/definitions/AuthHookMode"
-            }
-          ]
+        "allowExecution": {
+          "type": "boolean"
         }
       }
-    },
-    "AuthHookMode": {
-      "title": "AuthHookMode",
-      "type": "string",
-      "enum": [
-        "GET",
-        "POST"
-      ]
     }
   }
 }
