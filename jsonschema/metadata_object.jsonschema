@@ -13,7 +13,7 @@
     "HasuraMetadataObject": {
       "oneOf": [
         {
-          "title": "HasuraHubDataConnector",
+          "title": "HasuraHubDataSource",
           "type": "object",
           "required": [
             "connectorConfiguration",
@@ -25,11 +25,11 @@
             "kind": {
               "type": "string",
               "enum": [
-                "HasuraHubDataConnector"
+                "HasuraHubDataSource"
               ]
             },
             "name": {
-              "$ref": "#/definitions/DataConnectorName"
+              "$ref": "#/definitions/DataSourceName"
             },
             "connectorId": {
               "type": "string"
@@ -76,7 +76,7 @@
                 "AuthConfig"
               ]
             },
-            "allowRoleEmulationBy": {
+            "allowRoleEmulationFor": {
               "anyOf": [
                 {
                   "$ref": "#/definitions/Role"
@@ -90,8 +90,8 @@
         }
       ]
     },
-    "DataConnectorName": {
-      "description": "The name of a data connector.",
+    "DataSourceName": {
+      "description": "The name of a data source.",
       "type": "string"
     },
     "Role": {
@@ -110,7 +110,7 @@
           "format": "uri"
         },
         "mode": {
-          "default": "Get",
+          "default": "GET",
           "allOf": [
             {
               "$ref": "#/definitions/AuthHookMode"
@@ -123,14 +123,47 @@
       "title": "AuthHookMode",
       "type": "string",
       "enum": [
-        "Get",
-        "Post"
+        "GET",
+        "POST"
       ]
     },
     "JWTConfig": {
+      "description": "Config to describe how/where the engine should look for the claims within the decoded token.",
       "type": "object",
-      "required": [
-        "mode"
+      "anyOf": [
+        {
+          "type": "object",
+          "required": [
+            "claimsMap"
+          ],
+          "properties": {
+            "claimsMap": {
+              "$ref": "#/definitions/ClaimsMap"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "claims_format"
+          ],
+          "properties": {
+            "claims_format": {
+              "description": "Format in which the Hasura claims will be present.",
+              "allOf": [
+                {
+                  "$ref": "#/definitions/ClaimsFormat"
+                }
+              ]
+            },
+            "claims_namespace_path": {
+              "description": "Pointer to lookup the Hasura claims within the decoded claims.",
+              "default": "/https:~1~1hasura.io~1jwt~1claims",
+              "type": "string",
+              "format": "JSON pointer"
+            }
+          }
+        }
       ],
       "properties": {
         "audience": {
@@ -160,84 +193,74 @@
           "format": "uint64",
           "minimum": 0.0
         },
-        "claimsConfig": {
-          "description": "Claims config. Either specified via `claims_mappings` or `claims_namespace_path`",
-          "default": {
-            "namespace": {
-              "claimsFormat": "Json",
-              "path": "/https:~1~1hasura.io~1jwt~1claims"
-            }
-          },
-          "allOf": [
-            {
-              "$ref": "#/definitions/JWTClaimsConfig"
-            }
-          ]
-        },
         "header": {
           "description": "Source of the JWT authentication token.",
           "default": {
-            "type": "Authorization"
+            "type": "authorization"
           },
           "allOf": [
             {
               "$ref": "#/definitions/JWTHeader"
             }
           ]
-        },
-        "mode": {
-          "description": "Mode according to which the JWT auth is configured.",
-          "allOf": [
-            {
-              "$ref": "#/definitions/JWTMode"
-            }
-          ]
         }
       }
     },
-    "JWTClaimsConfig": {
-      "description": "Config to describe how/where the engine should look for the claims within the decoded token.",
+    "JWTHeader": {
+      "description": "Source of the Authorization token",
       "oneOf": [
         {
+          "description": "Get the token from the `Authorization` header.",
           "type": "object",
           "required": [
-            "claimsMap"
+            "type"
           ],
           "properties": {
-            "claimsMap": {
-              "$ref": "#/definitions/ClaimsMap"
+            "type": {
+              "type": "string",
+              "enum": [
+                "authorization"
+              ]
             }
-          },
-          "additionalProperties": false
+          }
         },
         {
+          "description": "Get the token from the Cookie header under the specificied cookie name.",
           "type": "object",
           "required": [
-            "namespace"
+            "name",
+            "type"
           ],
           "properties": {
-            "namespace": {
-              "type": "object",
-              "properties": {
-                "claimsFormat": {
-                  "description": "Format in which the Hasura claims will be present.",
-                  "default": "Json",
-                  "allOf": [
-                    {
-                      "$ref": "#/definitions/ClaimsFormat"
-                    }
-                  ]
-                },
-                "path": {
-                  "description": "Pointer to lookup the Hasura claims within the decoded claims.",
-                  "default": "/https:~1~1hasura.io~1jwt~1claims",
-                  "type": "string",
-                  "format": "JSON pointer"
-                }
-              }
+            "type": {
+              "type": "string",
+              "enum": [
+                "cookie"
+              ]
+            },
+            "name": {
+              "type": "string"
             }
-          },
-          "additionalProperties": false
+          }
+        },
+        {
+          "description": "Custom header from where the header should be parsed from.",
+          "type": "object",
+          "required": [
+            "name",
+            "type"
+          ],
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": [
+                "customHeader"
+              ]
+            },
+            "name": {
+              "type": "string"
+            }
+          }
         }
       ]
     },
@@ -257,19 +280,14 @@
       }
     },
     "ClaimsMappingEntry_for_Role": {
-      "oneOf": [
+      "anyOf": [
         {
           "description": "Literal value of the claims mapping",
-          "type": "object",
-          "required": [
-            "literal"
-          ],
-          "properties": {
-            "literal": {
+          "allOf": [
+            {
               "$ref": "#/definitions/Role"
             }
-          },
-          "additionalProperties": false
+          ]
         },
         {
           "description": "Look up the Hasura claims at the specified JSON Pointer and provide a default value if the lookup fails.",
@@ -279,101 +297,69 @@
           ],
           "properties": {
             "path": {
-              "type": "object",
-              "required": [
-                "path"
-              ],
-              "properties": {
-                "path": {
-                  "description": "JSON pointer to find the particular claim in the decoded JWT token.",
-                  "type": "string",
-                  "format": "JSON pointer"
+              "description": "JSON pointer to find the particular claim in the decoded JWT token.",
+              "type": "string",
+              "format": "JSON pointer"
+            },
+            "default": {
+              "description": "Default value to be used when no value is found when looking up the value using the `path`.",
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/Role"
                 },
-                "default": {
-                  "description": "Default value to be used when no value is found when looking up the value using the `path`.",
-                  "anyOf": [
-                    {
-                      "$ref": "#/definitions/Role"
-                    },
-                    {
-                      "type": "null"
-                    }
-                  ]
+                {
+                  "type": "null"
                 }
-              }
+              ]
             }
-          },
-          "additionalProperties": false
+          }
         }
       ]
     },
     "ClaimsMappingEntry_for_Array_of_Role": {
-      "oneOf": [
+      "anyOf": [
         {
           "description": "Literal value of the claims mapping",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Role"
+          }
+        },
+        {
+          "description": "Look up the Hasura claims at the specified JSON Pointer and provide a default value if the lookup fails.",
           "type": "object",
           "required": [
-            "literal"
+            "path"
           ],
           "properties": {
-            "literal": {
-              "type": "array",
+            "path": {
+              "description": "JSON pointer to find the particular claim in the decoded JWT token.",
+              "type": "string",
+              "format": "JSON pointer"
+            },
+            "default": {
+              "description": "Default value to be used when no value is found when looking up the value using the `path`.",
+              "type": [
+                "array",
+                "null"
+              ],
               "items": {
                 "$ref": "#/definitions/Role"
               }
             }
-          },
-          "additionalProperties": false
-        },
-        {
-          "description": "Look up the Hasura claims at the specified JSON Pointer and provide a default value if the lookup fails.",
-          "type": "object",
-          "required": [
-            "path"
-          ],
-          "properties": {
-            "path": {
-              "type": "object",
-              "required": [
-                "path"
-              ],
-              "properties": {
-                "path": {
-                  "description": "JSON pointer to find the particular claim in the decoded JWT token.",
-                  "type": "string",
-                  "format": "JSON pointer"
-                },
-                "default": {
-                  "description": "Default value to be used when no value is found when looking up the value using the `path`.",
-                  "type": [
-                    "array",
-                    "null"
-                  ],
-                  "items": {
-                    "$ref": "#/definitions/Role"
-                  }
-                }
-              }
-            }
-          },
-          "additionalProperties": false
+          }
         }
       ]
     },
     "ClaimsMappingEntry_for_SessionVariableValue": {
-      "oneOf": [
+      "anyOf": [
         {
           "description": "Literal value of the claims mapping",
-          "type": "object",
-          "required": [
-            "literal"
-          ],
-          "properties": {
-            "literal": {
+          "allOf": [
+            {
               "$ref": "#/definitions/SessionVariableValue"
             }
-          },
-          "additionalProperties": false
+          ]
         },
         {
           "description": "Look up the Hasura claims at the specified JSON Pointer and provide a default value if the lookup fails.",
@@ -383,31 +369,22 @@
           ],
           "properties": {
             "path": {
-              "type": "object",
-              "required": [
-                "path"
-              ],
-              "properties": {
-                "path": {
-                  "description": "JSON pointer to find the particular claim in the decoded JWT token.",
-                  "type": "string",
-                  "format": "JSON pointer"
+              "description": "JSON pointer to find the particular claim in the decoded JWT token.",
+              "type": "string",
+              "format": "JSON pointer"
+            },
+            "default": {
+              "description": "Default value to be used when no value is found when looking up the value using the `path`.",
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/SessionVariableValue"
                 },
-                "default": {
-                  "description": "Default value to be used when no value is found when looking up the value using the `path`.",
-                  "anyOf": [
-                    {
-                      "$ref": "#/definitions/SessionVariableValue"
-                    },
-                    {
-                      "type": "null"
-                    }
-                  ]
+                {
+                  "type": "null"
                 }
-              }
+              ]
             }
-          },
-          "additionalProperties": false
+          }
         }
       ]
     },
@@ -420,104 +397,15 @@
           "description": "Claims will be in the JSON format.",
           "type": "string",
           "enum": [
-            "Json"
+            "json"
           ]
         },
         {
           "description": "Claims will be in the Stringified JSON format.",
           "type": "string",
           "enum": [
-            "StringifiedJson"
+            "stringifiedJson"
           ]
-        }
-      ]
-    },
-    "JWTHeader": {
-      "description": "Source of the Authorization token",
-      "oneOf": [
-        {
-          "description": "Get the token from the `Authorization` header.",
-          "type": "object",
-          "required": [
-            "type"
-          ],
-          "properties": {
-            "type": {
-              "type": "string",
-              "enum": [
-                "Authorization"
-              ]
-            }
-          }
-        },
-        {
-          "description": "Get the token from the Cookie header under the specificied cookie name.",
-          "type": "object",
-          "required": [
-            "name",
-            "type"
-          ],
-          "properties": {
-            "type": {
-              "type": "string",
-              "enum": [
-                "Cookie"
-              ]
-            },
-            "name": {
-              "type": "string"
-            }
-          }
-        },
-        {
-          "description": "Custom header from where the header should be parsed from.",
-          "type": "object",
-          "required": [
-            "name",
-            "type"
-          ],
-          "properties": {
-            "type": {
-              "type": "string",
-              "enum": [
-                "CustomHeader"
-              ]
-            },
-            "name": {
-              "type": "string"
-            }
-          }
-        }
-      ]
-    },
-    "JWTMode": {
-      "oneOf": [
-        {
-          "description": "JWT mode when the algorithm `type` and `key` is known",
-          "type": "object",
-          "required": [
-            "viaKey"
-          ],
-          "properties": {
-            "viaKey": {
-              "$ref": "#/definitions/JWTKeyConfig"
-            }
-          },
-          "additionalProperties": false
-        },
-        {
-          "description": "JWT mode where the `type` and `key` parameters are obtained dynamically through JWK.",
-          "type": "object",
-          "required": [
-            "viaJwk"
-          ],
-          "properties": {
-            "viaJwk": {
-              "type": "string",
-              "format": "uri"
-            }
-          },
-          "additionalProperties": false
         }
       ]
     },
@@ -628,33 +516,25 @@
     "OpenDdsObject": {
       "oneOf": [
         {
-          "title": "DataConnector",
+          "title": "DataSource",
           "type": "object",
           "required": [
+            "dataConnectorUrl",
             "kind",
-            "name",
-            "url"
+            "name"
           ],
           "properties": {
             "kind": {
               "type": "string",
               "enum": [
-                "DataConnector"
+                "DataSource"
               ]
             },
             "name": {
-              "$ref": "#/definitions/DataConnectorName"
+              "$ref": "#/definitions/DataSourceName"
             },
-            "url": {
+            "dataConnectorUrl": {
               "$ref": "#/definitions/DataConnectorUrl"
-            },
-            "headers": {
-              "description": "Key value map of HTTP headers to be sent with each request to the data connector",
-              "default": {},
-              "type": "object",
-              "additionalProperties": {
-                "$ref": "#/definitions/SecretableString"
-              }
             },
             "schema": {
               "default": {
@@ -697,7 +577,7 @@
                 "$ref": "#/definitions/FieldDefinition"
               }
             },
-            "globalIdFields": {
+            "globalID": {
               "type": [
                 "array",
                 "null"
@@ -757,13 +637,13 @@
         },
         {
           "title": "DataConnectorScalarRepresentation",
-          "description": "The representation of a data connector scalar in terms of Open DD types",
+          "description": "The representation of a data source scalar in terms of Open DD types",
           "type": "object",
           "required": [
-            "dataConnectorName",
-            "dataConnectorScalarType",
+            "dataSource",
             "kind",
-            "representation"
+            "representation",
+            "scalarType"
           ],
           "properties": {
             "kind": {
@@ -772,10 +652,10 @@
                 "DataConnectorScalarRepresentation"
               ]
             },
-            "dataConnectorName": {
-              "$ref": "#/definitions/DataConnectorName"
+            "dataSource": {
+              "$ref": "#/definitions/DataSourceName"
             },
-            "dataConnectorScalarType": {
+            "scalarType": {
               "type": "string"
             },
             "representation": {
@@ -784,7 +664,7 @@
             "graphql": {
               "anyOf": [
                 {
-                  "$ref": "#/definitions/DataConnectorScalarGraphQLConfiguration"
+                  "$ref": "#/definitions/DataSourceScalarGraphQLConfiguration"
                 },
                 {
                   "type": "null"
@@ -798,9 +678,9 @@
           "description": "The definition of a data model. A data model is a collection of objects of a particular type. Models can support one or more CRUD operations.",
           "type": "object",
           "required": [
+            "dataType",
             "kind",
-            "name",
-            "objectType"
+            "name"
           ],
           "properties": {
             "kind": {
@@ -812,7 +692,7 @@
             "name": {
               "$ref": "#/definitions/ModelName"
             },
-            "objectType": {
+            "dataType": {
               "description": "The type of the objects of which this model is a collection.",
               "allOf": [
                 {
@@ -820,7 +700,7 @@
                 }
               ]
             },
-            "globalIdSource": {
+            "globalIDSource": {
               "default": false,
               "type": "boolean"
             },
@@ -914,7 +794,7 @@
           "type": "object",
           "required": [
             "kind",
-            "mapping",
+            "mappings",
             "name",
             "source",
             "target"
@@ -935,7 +815,7 @@
             "target": {
               "$ref": "#/definitions/RelationshipTarget"
             },
-            "mapping": {
+            "mappings": {
               "type": "array",
               "items": {
                 "$ref": "#/definitions/RelationshipMapping"
@@ -1026,31 +906,27 @@
       ]
     },
     "DataConnectorUrl": {
-      "title": "DataConnectorUrl",
-      "anyOf": [
-        {
-          "$ref": "#/definitions/SecretableString"
+      "type": "object",
+      "required": [
+        "url"
+      ],
+      "properties": {
+        "url": {
+          "type": "string"
         },
-        {
-          "title": "ReadWriteUrls",
-          "type": "object",
-          "required": [
-            "read",
-            "write"
-          ],
-          "properties": {
-            "read": {
-              "$ref": "#/definitions/SecretableString"
-            },
-            "write": {
-              "$ref": "#/definitions/SecretableString"
-            }
-          }
+        "reads": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "writes": {
+          "type": [
+            "string",
+            "null"
+          ]
         }
-      ]
-    },
-    "SecretableString": {
-      "$ref": "https://raw.githubusercontent.com/hasura/ndc-spec/main/ndc-client/tests/json_schema/secret_or_literal.jsonschema"
+      }
     },
     "TypeName": {
       "description": "The name of a user-defined Open DDS type.",
@@ -1167,9 +1043,9 @@
         }
       }
     },
-    "DataConnectorScalarGraphQLConfiguration": {
-      "title": "DataConnectorScalarGraphQLConfiguration",
-      "description": "GraphQL configuration of a data connector scalar",
+    "DataSourceScalarGraphQLConfiguration": {
+      "title": "DataSourceScalarGraphQLConfiguration",
+      "description": "GraphQL configuration of a data source scalar",
       "type": "object",
       "properties": {
         "comparisonExpressionTypeName": {
@@ -1210,18 +1086,18 @@
     },
     "ModelSource": {
       "title": "ModelSource",
-      "description": "Description of how a model maps to a particular data connector",
+      "description": "Description of how a model maps to a particular data source",
       "type": "object",
       "required": [
         "collection",
-        "dataConnectorName"
+        "dataSource"
       ],
       "properties": {
-        "dataConnectorName": {
-          "description": "The name of the data connector backing this model.",
+        "dataSource": {
+          "description": "The name of the data source backing this model.",
           "allOf": [
             {
-              "$ref": "#/definitions/DataConnectorName"
+              "$ref": "#/definitions/DataSourceName"
             }
           ]
         },
@@ -1229,15 +1105,15 @@
           "description": "The collection in the data connector that backs this model.",
           "type": "string"
         },
-        "typeMapping": {
-          "description": "How the various types used in this model correspond to entities in the data connector.",
+        "typeMappings": {
+          "description": "How the various types used in this model correspond to entities in the data source.",
           "default": {},
           "type": "object",
           "additionalProperties": {
             "$ref": "#/definitions/TypeMapping"
           }
         },
-        "argumentMapping": {
+        "argumentMappings": {
           "default": {},
           "type": "object",
           "additionalProperties": {
@@ -1252,10 +1128,10 @@
           "title": "ObjectTypeMapping",
           "type": "object",
           "required": [
-            "fieldMapping"
+            "fieldMappings"
           ],
           "properties": {
-            "fieldMapping": {
+            "fieldMappings": {
               "type": "object",
               "additionalProperties": {
                 "$ref": "#/definitions/FieldMapping"
@@ -1295,6 +1171,16 @@
           "anyOf": [
             {
               "$ref": "#/definitions/SelectManyGraphQlDefinition"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "argumentsInputField": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/GraphQlFieldName"
             },
             {
               "type": "null"
@@ -1388,7 +1274,7 @@
     },
     "CommandSource": {
       "title": "CommandSource",
-      "description": "Description of how a command maps to a particular data connector",
+      "description": "Description of how a command maps to a particular data source",
       "type": "object",
       "oneOf": [
         {
@@ -1417,27 +1303,26 @@
         }
       ],
       "required": [
-        "dataConnectorName"
+        "dataSource"
       ],
       "properties": {
-        "dataConnectorName": {
-          "description": "The name of the data connector backing this command.",
+        "dataSource": {
+          "description": "The name of the data source backing this command.",
           "allOf": [
             {
-              "$ref": "#/definitions/DataConnectorName"
+              "$ref": "#/definitions/DataSourceName"
             }
           ]
         },
-        "typeMapping": {
-          "description": "How the various types used in this command correspond to entities in the data connector.",
+        "typeMappings": {
+          "description": "How the various types used in this command correspond to entities in the data source.",
           "default": {},
           "type": "object",
           "additionalProperties": {
             "$ref": "#/definitions/TypeMapping"
           }
         },
-        "argumentMapping": {
-          "description": "Mapping from command argument names to data connector table argument names.",
+        "argumentMappings": {
           "default": {},
           "type": "object",
           "additionalProperties": {
