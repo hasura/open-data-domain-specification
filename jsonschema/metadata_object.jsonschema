@@ -13,114 +13,218 @@
     "HasuraMetadataObject": {
       "oneOf": [
         {
-          "title": "HasuraHubDataConnector",
+          "title": "CompatibilityConfig",
           "type": "object",
           "required": [
-            "connectorConfiguration",
-            "connectorId",
-            "kind",
-            "name"
-          ],
-          "properties": {
-            "kind": {
-              "type": "string",
-              "enum": [
-                "HasuraHubDataConnector"
-              ]
-            },
-            "name": {
-              "$ref": "#/definitions/DataConnectorName"
-            },
-            "connectorId": {
-              "type": "string"
-            },
-            "connectorConfiguration": {
-              "$ref": "https://postgres-configserv.ddn.hasura.app/schema"
-            }
-          }
-        },
-        {
-          "title": "AuthConfig",
-          "type": "object",
-          "oneOf": [
-            {
-              "type": "object",
-              "required": [
-                "webhook"
-              ],
-              "properties": {
-                "webhook": {
-                  "$ref": "#/definitions/AuthHookConfig"
-                }
-              }
-            },
-            {
-              "type": "object",
-              "required": [
-                "jwt"
-              ],
-              "properties": {
-                "jwt": {
-                  "$ref": "#/definitions/JWTConfig"
-                }
-              }
-            }
-          ],
-          "required": [
+            "date",
             "kind"
           ],
           "properties": {
             "kind": {
               "type": "string",
               "enum": [
-                "AuthConfig"
+                "CompatibilityConfig"
               ]
             },
-            "allowRoleEmulationBy": {
-              "anyOf": [
-                {
-                  "$ref": "#/definitions/Role"
-                },
-                {
-                  "type": "null"
-                }
-              ]
+            "date": {
+              "$ref": "#/definitions/CompatibilityDate"
             }
           }
+        },
+        {
+          "title": "HasuraHubDataConnector",
+          "oneOf": [
+            {
+              "type": "object",
+              "required": [
+                "definition",
+                "kind",
+                "version"
+              ],
+              "properties": {
+                "kind": {
+                  "type": "string",
+                  "enum": [
+                    "HasuraHubDataConnector"
+                  ]
+                },
+                "version": {
+                  "type": "string",
+                  "enum": [
+                    "v1"
+                  ]
+                },
+                "definition": {
+                  "$ref": "#/definitions/HasuraHubDataConnectorV1"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "title": "AuthConfig",
+          "oneOf": [
+            {
+              "type": "object",
+              "required": [
+                "definition",
+                "kind",
+                "version"
+              ],
+              "properties": {
+                "kind": {
+                  "type": "string",
+                  "enum": [
+                    "AuthConfig"
+                  ]
+                },
+                "version": {
+                  "type": "string",
+                  "enum": [
+                    "v1"
+                  ]
+                },
+                "definition": {
+                  "$ref": "#/definitions/AuthConfigV1"
+                }
+              }
+            }
+          ]
         }
       ]
+    },
+    "CompatibilityDate": {
+      "type": "string",
+      "format": "date"
+    },
+    "HasuraHubDataConnectorV1": {
+      "title": "HasuraHubDataConnectorV1",
+      "type": "object",
+      "required": [
+        "connectorConfiguration",
+        "connectorId",
+        "name"
+      ],
+      "properties": {
+        "name": {
+          "$ref": "#/definitions/DataConnectorName"
+        },
+        "connectorId": {
+          "type": "string"
+        },
+        "connectorConfiguration": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/HubDataConnectorRegionConfig"
+          }
+        }
+      }
     },
     "DataConnectorName": {
       "description": "The name of a data connector.",
       "type": "string"
     },
+    "HubDataConnectorRegionConfig": {
+      "type": "object",
+      "required": [
+        "configuration",
+        "mode",
+        "region"
+      ],
+      "properties": {
+        "region": {
+          "type": "string"
+        },
+        "mode": {
+          "$ref": "#/definitions/ConnectorMode"
+        },
+        "configuration": {
+          "$ref": "https://postgres-configserv.ddn.hasura.app/schema"
+        }
+      }
+    },
+    "ConnectorMode": {
+      "type": "string",
+      "enum": [
+        "ReadOnly",
+        "ReadWrite",
+        "WriteOnly"
+      ]
+    },
+    "AuthConfigV1": {
+      "title": "AuthConfigV1",
+      "type": "object",
+      "required": [
+        "mode"
+      ],
+      "properties": {
+        "allowRoleEmulationBy": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/Role"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "mode": {
+          "$ref": "#/definitions/AuthModeConfig"
+        }
+      }
+    },
     "Role": {
       "type": "string"
+    },
+    "AuthModeConfig": {
+      "title": "AuthModeConfig",
+      "oneOf": [
+        {
+          "type": "object",
+          "required": [
+            "webhook"
+          ],
+          "properties": {
+            "webhook": {
+              "$ref": "#/definitions/AuthHookConfig"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "jwt"
+          ],
+          "properties": {
+            "jwt": {
+              "$ref": "#/definitions/JWTConfig"
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
     },
     "AuthHookConfig": {
       "title": "AuthHookConfig",
       "description": "The config of the Authentication hook",
       "type": "object",
       "required": [
-        "webhookUrl"
+        "method",
+        "url"
       ],
       "properties": {
-        "webhookUrl": {
+        "url": {
           "type": "string",
           "format": "uri"
         },
-        "mode": {
-          "default": "Get",
-          "allOf": [
-            {
-              "$ref": "#/definitions/AuthHookMode"
-            }
-          ]
+        "method": {
+          "$ref": "#/definitions/AuthHookMethod"
         }
       }
     },
-    "AuthHookMode": {
-      "title": "AuthHookMode",
+    "AuthHookMethod": {
+      "title": "AuthHookMethod",
       "type": "string",
       "enum": [
         "Get",
@@ -130,7 +234,9 @@
     "JWTConfig": {
       "type": "object",
       "required": [
-        "mode"
+        "claimsConfig",
+        "key",
+        "tokenLocation"
       ],
       "properties": {
         "audience": {
@@ -162,49 +268,41 @@
         },
         "claimsConfig": {
           "description": "Claims config. Either specified via `claims_mappings` or `claims_namespace_path`",
-          "default": {
-            "namespace": {
-              "claimsFormat": "Json",
-              "path": "/https:~1~1hasura.io~1jwt~1claims"
-            }
-          },
           "allOf": [
             {
               "$ref": "#/definitions/JWTClaimsConfig"
             }
           ]
         },
-        "header": {
+        "tokenLocation": {
           "description": "Source of the JWT authentication token.",
-          "default": {
-            "type": "Authorization"
-          },
           "allOf": [
             {
-              "$ref": "#/definitions/JWTHeader"
+              "$ref": "#/definitions/JWTTokenLocation"
             }
           ]
         },
-        "mode": {
+        "key": {
           "description": "Mode according to which the JWT auth is configured.",
           "allOf": [
             {
-              "$ref": "#/definitions/JWTMode"
+              "$ref": "#/definitions/JWTKey"
             }
           ]
         }
       }
     },
     "JWTClaimsConfig": {
+      "title": "JWTClaimsConfig",
       "description": "Config to describe how/where the engine should look for the claims within the decoded token.",
       "oneOf": [
         {
           "type": "object",
           "required": [
-            "claimsMap"
+            "locations"
           ],
           "properties": {
-            "claimsMap": {
+            "locations": {
               "$ref": "#/definitions/ClaimsMap"
             }
           },
@@ -218,19 +316,21 @@
           "properties": {
             "namespace": {
               "type": "object",
+              "required": [
+                "claimsFormat",
+                "location"
+              ],
               "properties": {
                 "claimsFormat": {
                   "description": "Format in which the Hasura claims will be present.",
-                  "default": "Json",
                   "allOf": [
                     {
-                      "$ref": "#/definitions/ClaimsFormat"
+                      "$ref": "#/definitions/JWTClaimsFormat"
                     }
                   ]
                 },
-                "path": {
+                "location": {
                   "description": "Pointer to lookup the Hasura claims within the decoded claims.",
-                  "default": "/https:~1~1hasura.io~1jwt~1claims",
                   "type": "string",
                   "format": "JSON pointer"
                 }
@@ -242,6 +342,7 @@
       ]
     },
     "ClaimsMap": {
+      "title": "ClaimsMap",
       "type": "object",
       "required": [
         "x-hasura-allowed-roles",
@@ -257,6 +358,7 @@
       }
     },
     "ClaimsMappingEntry_for_Role": {
+      "title": "ClaimsMappingEntry",
       "oneOf": [
         {
           "description": "Literal value of the claims mapping",
@@ -308,6 +410,7 @@
       ]
     },
     "ClaimsMappingEntry_for_Array_of_Role": {
+      "title": "ClaimsMappingEntry",
       "oneOf": [
         {
           "description": "Literal value of the claims mapping",
@@ -361,6 +464,7 @@
       ]
     },
     "ClaimsMappingEntry_for_SessionVariableValue": {
+      "title": "ClaimsMappingEntry",
       "oneOf": [
         {
           "description": "Literal value of the claims mapping",
@@ -414,7 +518,8 @@
     "SessionVariableValue": {
       "type": "string"
     },
-    "ClaimsFormat": {
+    "JWTClaimsFormat": {
+      "title": "JWTClaimsFormat",
       "oneOf": [
         {
           "description": "Claims will be in the JSON format.",
@@ -432,11 +537,12 @@
         }
       ]
     },
-    "JWTHeader": {
+    "JWTTokenLocation": {
+      "title": "JWTTokenLocation",
       "description": "Source of the Authorization token",
       "oneOf": [
         {
-          "description": "Get the token from the `Authorization` header.",
+          "description": "Get the bearer token from the `Authorization` header.",
           "type": "object",
           "required": [
             "type"
@@ -445,7 +551,7 @@
             "type": {
               "type": "string",
               "enum": [
-                "Authorization"
+                "BearerAuthorization"
               ]
             }
           }
@@ -480,7 +586,7 @@
             "type": {
               "type": "string",
               "enum": [
-                "CustomHeader"
+                "Header"
               ]
             },
             "name": {
@@ -490,16 +596,17 @@
         }
       ]
     },
-    "JWTMode": {
+    "JWTKey": {
+      "title": "JWTKey",
       "oneOf": [
         {
           "description": "JWT mode when the algorithm `type` and `key` is known",
           "type": "object",
           "required": [
-            "viaKey"
+            "fixed"
           ],
           "properties": {
-            "viaKey": {
+            "fixed": {
               "$ref": "#/definitions/JWTKeyConfig"
             }
           },
@@ -509,10 +616,10 @@
           "description": "JWT mode where the `type` and `key` parameters are obtained dynamically through JWK.",
           "type": "object",
           "required": [
-            "viaJwk"
+            "jwkFromUrl"
           ],
           "properties": {
-            "viaJwk": {
+            "jwkFromUrl": {
               "type": "string",
               "format": "uri"
             }
@@ -522,22 +629,24 @@
       ]
     },
     "JWTKeyConfig": {
+      "title": "JWTKeyConfig",
       "description": "JWT Secret config according to which the incoming JWT will be decoded.",
       "type": "object",
       "required": [
-        "key",
-        "type"
+        "algorithm",
+        "key"
       ],
       "properties": {
-        "type": {
+        "algorithm": {
           "$ref": "#/definitions/Algorithm"
         },
         "key": {
-          "type": "string"
+          "$ref": "#/definitions/SecretableString"
         }
       }
     },
     "Algorithm": {
+      "title": "JWTAlgorithm",
       "oneOf": [
         {
           "description": "HMAC using SHA-256",
@@ -625,435 +734,442 @@
         }
       ]
     },
+    "SecretableString": {
+      "$ref": "https://raw.githubusercontent.com/hasura/ndc-spec/main/ndc-client/tests/json_schema/secretable_value.jsonschema"
+    },
     "OpenDdsObject": {
       "oneOf": [
         {
           "title": "DataConnector",
-          "type": "object",
-          "required": [
-            "kind",
-            "name",
-            "url"
-          ],
-          "properties": {
-            "kind": {
-              "type": "string",
-              "enum": [
-                "DataConnector"
-              ]
-            },
-            "name": {
-              "$ref": "#/definitions/DataConnectorName"
-            },
-            "url": {
-              "$ref": "#/definitions/DataConnectorUrl"
-            },
-            "headers": {
-              "description": "Key value map of HTTP headers to be sent with each request to the data connector",
-              "default": {},
+          "oneOf": [
+            {
               "type": "object",
-              "additionalProperties": {
-                "$ref": "#/definitions/SecretableString"
-              }
-            },
-            "schema": {
-              "default": {
-                "scalar_types": {},
-                "object_types": {},
-                "collections": [],
-                "functions": [],
-                "procedures": []
-              },
-              "allOf": [
-                {
-                  "$ref": "https://raw.githubusercontent.com/hasura/ndc-spec/main/ndc-client/tests/json_schema/schema_response.jsonschema"
+              "required": [
+                "definition",
+                "kind",
+                "version"
+              ],
+              "properties": {
+                "kind": {
+                  "type": "string",
+                  "enum": [
+                    "DataConnector"
+                  ]
+                },
+                "version": {
+                  "type": "string",
+                  "enum": [
+                    "v1"
+                  ]
+                },
+                "definition": {
+                  "$ref": "#/definitions/DataConnectorV1"
                 }
-              ]
+              }
             }
-          }
+          ]
         },
         {
           "title": "ObjectType",
           "description": "Definition of a user-defined Open DD object type.",
-          "type": "object",
-          "required": [
-            "fields",
-            "kind",
-            "name"
-          ],
-          "properties": {
-            "kind": {
-              "type": "string",
-              "enum": [
-                "ObjectType"
-              ]
-            },
-            "name": {
-              "$ref": "#/definitions/TypeName"
-            },
-            "fields": {
-              "type": "array",
-              "items": {
-                "$ref": "#/definitions/FieldDefinition"
-              }
-            },
-            "globalIdFields": {
-              "type": [
-                "array",
-                "null"
+          "oneOf": [
+            {
+              "type": "object",
+              "required": [
+                "definition",
+                "kind",
+                "version"
               ],
-              "items": {
-                "$ref": "#/definitions/FieldName"
-              }
-            },
-            "graphql": {
-              "description": "GraphQl configuration for this object.",
-              "anyOf": [
-                {
-                  "$ref": "#/definitions/ObjectTypeGraphQLConfiguration"
+              "properties": {
+                "kind": {
+                  "type": "string",
+                  "enum": [
+                    "ObjectType"
+                  ]
                 },
-                {
-                  "type": "null"
+                "version": {
+                  "type": "string",
+                  "enum": [
+                    "v1"
+                  ]
+                },
+                "definition": {
+                  "$ref": "#/definitions/ObjectTypeV1"
                 }
-              ]
+              }
             }
-          }
+          ]
         },
         {
           "title": "ScalarType",
           "description": "Definition of a user-defined scalar type that that has opaque semantics.",
-          "type": "object",
-          "required": [
-            "kind",
-            "name"
-          ],
-          "properties": {
-            "kind": {
-              "type": "string",
-              "enum": [
-                "ScalarType"
-              ]
-            },
-            "name": {
-              "description": "The OpenDD name of this type.",
-              "allOf": [
-                {
-                  "$ref": "#/definitions/TypeName"
-                }
-              ]
-            },
-            "graphql": {
-              "description": "The name of the GraphQl scalar type to use for",
-              "anyOf": [
-                {
-                  "$ref": "#/definitions/ScalarTypeGraphQLConfiguration"
+          "oneOf": [
+            {
+              "type": "object",
+              "required": [
+                "definition",
+                "kind",
+                "version"
+              ],
+              "properties": {
+                "kind": {
+                  "type": "string",
+                  "enum": [
+                    "ScalarType"
+                  ]
                 },
-                {
-                  "type": "null"
+                "version": {
+                  "type": "string",
+                  "enum": [
+                    "v1"
+                  ]
+                },
+                "definition": {
+                  "$ref": "#/definitions/ScalarTypeV1"
                 }
-              ]
+              }
             }
-          }
+          ]
         },
         {
           "title": "DataConnectorScalarRepresentation",
           "description": "The representation of a data connector scalar in terms of Open DD types",
-          "type": "object",
-          "required": [
-            "dataConnectorName",
-            "dataConnectorScalarType",
-            "kind",
-            "representation"
-          ],
-          "properties": {
-            "kind": {
-              "type": "string",
-              "enum": [
-                "DataConnectorScalarRepresentation"
-              ]
-            },
-            "dataConnectorName": {
-              "$ref": "#/definitions/DataConnectorName"
-            },
-            "dataConnectorScalarType": {
-              "type": "string"
-            },
-            "representation": {
-              "$ref": "#/definitions/Type"
-            },
-            "graphql": {
-              "anyOf": [
-                {
-                  "$ref": "#/definitions/DataConnectorScalarGraphQLConfiguration"
+          "oneOf": [
+            {
+              "type": "object",
+              "required": [
+                "definition",
+                "kind",
+                "version"
+              ],
+              "properties": {
+                "kind": {
+                  "type": "string",
+                  "enum": [
+                    "DataConnectorScalarRepresentation"
+                  ]
                 },
-                {
-                  "type": "null"
+                "version": {
+                  "type": "string",
+                  "enum": [
+                    "v1"
+                  ]
+                },
+                "definition": {
+                  "$ref": "#/definitions/DataConnectorScalarRepresentationV1"
                 }
-              ]
+              }
             }
-          }
+          ]
         },
         {
           "title": "Model",
           "description": "The definition of a data model. A data model is a collection of objects of a particular type. Models can support one or more CRUD operations.",
-          "type": "object",
-          "required": [
-            "kind",
-            "name",
-            "objectType"
-          ],
-          "properties": {
-            "kind": {
-              "type": "string",
-              "enum": [
-                "Model"
-              ]
-            },
-            "name": {
-              "$ref": "#/definitions/ModelName"
-            },
-            "objectType": {
-              "description": "The type of the objects of which this model is a collection.",
-              "allOf": [
-                {
-                  "$ref": "#/definitions/TypeName"
+          "oneOf": [
+            {
+              "type": "object",
+              "required": [
+                "definition",
+                "kind",
+                "version"
+              ],
+              "properties": {
+                "kind": {
+                  "type": "string",
+                  "enum": [
+                    "Model"
+                  ]
+                },
+                "version": {
+                  "type": "string",
+                  "enum": [
+                    "v1"
+                  ]
+                },
+                "definition": {
+                  "$ref": "#/definitions/ModelV1"
                 }
-              ]
-            },
-            "globalIdSource": {
-              "default": false,
-              "type": "boolean"
-            },
-            "arguments": {
-              "default": [],
-              "type": "array",
-              "items": {
-                "$ref": "#/definitions/ArgumentDefinition"
               }
-            },
-            "source": {
-              "anyOf": [
-                {
-                  "$ref": "#/definitions/ModelSource"
-                },
-                {
-                  "type": "null"
-                }
-              ]
-            },
-            "graphql": {
-              "anyOf": [
-                {
-                  "$ref": "#/definitions/ModelGraphQlDefinition"
-                },
-                {
-                  "type": "null"
-                }
-              ]
             }
-          }
+          ]
         },
         {
           "title": "Command",
           "description": "The definition of a command. A command is a user-defined operation which can take arguments and returns an output. The semantics of a command are opaque to the Open DD specification.",
-          "type": "object",
-          "required": [
-            "kind",
-            "name",
-            "outputType"
-          ],
-          "properties": {
-            "kind": {
-              "type": "string",
-              "enum": [
-                "Command"
-              ]
-            },
-            "name": {
-              "$ref": "#/definitions/CommandName"
-            },
-            "outputType": {
-              "description": "The type of the objects which is returned as the output.",
-              "allOf": [
-                {
-                  "$ref": "#/definitions/Type"
+          "oneOf": [
+            {
+              "type": "object",
+              "required": [
+                "definition",
+                "kind",
+                "version"
+              ],
+              "properties": {
+                "kind": {
+                  "type": "string",
+                  "enum": [
+                    "Command"
+                  ]
+                },
+                "version": {
+                  "type": "string",
+                  "enum": [
+                    "v1"
+                  ]
+                },
+                "definition": {
+                  "$ref": "#/definitions/CommandV1"
                 }
-              ]
-            },
-            "arguments": {
-              "default": [],
-              "type": "array",
-              "items": {
-                "$ref": "#/definitions/ArgumentDefinition"
               }
-            },
-            "source": {
-              "anyOf": [
-                {
-                  "$ref": "#/definitions/CommandSource"
-                },
-                {
-                  "type": "null"
-                }
-              ]
-            },
-            "graphql": {
-              "anyOf": [
-                {
-                  "$ref": "#/definitions/CommandGraphQlDefinition"
-                },
-                {
-                  "type": "null"
-                }
-              ]
             }
-          }
+          ]
         },
         {
           "title": "Relationship",
-          "type": "object",
-          "required": [
-            "kind",
-            "mapping",
-            "name",
-            "source",
-            "target"
-          ],
-          "properties": {
-            "kind": {
-              "type": "string",
-              "enum": [
-                "Relationship"
-              ]
-            },
-            "name": {
-              "$ref": "#/definitions/RelationshipName"
-            },
-            "source": {
-              "$ref": "#/definitions/TypeName"
-            },
-            "target": {
-              "$ref": "#/definitions/RelationshipTarget"
-            },
-            "mapping": {
-              "type": "array",
-              "items": {
-                "$ref": "#/definitions/RelationshipMapping"
+          "oneOf": [
+            {
+              "type": "object",
+              "required": [
+                "definition",
+                "kind",
+                "version"
+              ],
+              "properties": {
+                "kind": {
+                  "type": "string",
+                  "enum": [
+                    "Relationship"
+                  ]
+                },
+                "version": {
+                  "type": "string",
+                  "enum": [
+                    "v1"
+                  ]
+                },
+                "definition": {
+                  "$ref": "#/definitions/RelationshipV1"
+                }
               }
             }
-          }
+          ]
         },
         {
-          "title": "TypeOutputPermissions",
-          "type": "object",
-          "required": [
-            "kind",
-            "permissions",
-            "typeName"
-          ],
-          "properties": {
-            "kind": {
-              "type": "string",
-              "enum": [
-                "TypeOutputPermissions"
-              ]
-            },
-            "typeName": {
-              "$ref": "#/definitions/TypeName"
-            },
-            "permissions": {
+          "title": "TypePermissions",
+          "description": "List of roles and their permissions for a type",
+          "oneOf": [
+            {
               "type": "object",
-              "additionalProperties": {
-                "$ref": "#/definitions/TypeOutputPermission"
+              "required": [
+                "definition",
+                "kind",
+                "version"
+              ],
+              "properties": {
+                "kind": {
+                  "type": "string",
+                  "enum": [
+                    "TypePermissions"
+                  ]
+                },
+                "version": {
+                  "type": "string",
+                  "enum": [
+                    "v1"
+                  ]
+                },
+                "definition": {
+                  "$ref": "#/definitions/TypePermissionsV1"
+                }
               }
             }
-          }
+          ]
         },
         {
-          "title": "ModelSelectPermissions",
-          "description": "Role-Permission map for a model",
-          "type": "object",
-          "required": [
-            "kind",
-            "modelName",
-            "permissions"
-          ],
-          "properties": {
-            "kind": {
-              "type": "string",
-              "enum": [
-                "ModelSelectPermissions"
-              ]
-            },
-            "modelName": {
-              "$ref": "#/definitions/ModelName"
-            },
-            "permissions": {
+          "title": "ModelPermissions",
+          "description": "Roles and their permissions for a model",
+          "oneOf": [
+            {
               "type": "object",
-              "additionalProperties": {
-                "$ref": "#/definitions/SelectPermission"
+              "required": [
+                "definition",
+                "kind",
+                "version"
+              ],
+              "properties": {
+                "kind": {
+                  "type": "string",
+                  "enum": [
+                    "ModelPermissions"
+                  ]
+                },
+                "version": {
+                  "type": "string",
+                  "enum": [
+                    "v1"
+                  ]
+                },
+                "definition": {
+                  "$ref": "#/definitions/ModelPermissionsV1"
+                }
               }
             }
-          }
+          ]
         },
         {
           "title": "CommandPermissions",
           "description": "Role-Permission map for a command",
-          "type": "object",
-          "required": [
-            "commandName",
-            "kind",
-            "permissions"
-          ],
-          "properties": {
-            "kind": {
-              "type": "string",
-              "enum": [
-                "CommandPermissions"
-              ]
-            },
-            "commandName": {
-              "$ref": "#/definitions/CommandName"
-            },
-            "permissions": {
+          "oneOf": [
+            {
               "type": "object",
-              "additionalProperties": {
-                "$ref": "#/definitions/CommandPermission"
+              "required": [
+                "definition",
+                "kind",
+                "version"
+              ],
+              "properties": {
+                "kind": {
+                  "type": "string",
+                  "enum": [
+                    "CommandPermissions"
+                  ]
+                },
+                "version": {
+                  "type": "string",
+                  "enum": [
+                    "v1"
+                  ]
+                },
+                "definition": {
+                  "$ref": "#/definitions/CommandPermissionsV1"
+                }
               }
             }
-          }
+          ]
         }
       ]
     },
+    "DataConnectorV1": {
+      "title": "DataConnectorV1",
+      "type": "object",
+      "required": [
+        "name",
+        "url"
+      ],
+      "properties": {
+        "name": {
+          "$ref": "#/definitions/DataConnectorName"
+        },
+        "url": {
+          "$ref": "#/definitions/DataConnectorUrl"
+        },
+        "headers": {
+          "description": "Key value map of HTTP headers to be sent with each request to the data connector",
+          "default": {},
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/SecretableString"
+          }
+        },
+        "schema": {
+          "default": {
+            "scalar_types": {},
+            "object_types": {},
+            "collections": [],
+            "functions": [],
+            "procedures": []
+          },
+          "allOf": [
+            {
+              "$ref": "https://raw.githubusercontent.com/hasura/ndc-spec/v0.1.0-rc.7/ndc-client/tests/json_schema/schema_response.jsonschema"
+            }
+          ]
+        }
+      }
+    },
     "DataConnectorUrl": {
       "title": "DataConnectorUrl",
-      "anyOf": [
+      "oneOf": [
         {
-          "$ref": "#/definitions/SecretableString"
+          "type": "object",
+          "required": [
+            "singleUrl"
+          ],
+          "properties": {
+            "singleUrl": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
         },
         {
           "title": "ReadWriteUrls",
           "type": "object",
           "required": [
-            "read",
-            "write"
+            "readWriteUrls"
           ],
           "properties": {
-            "read": {
-              "$ref": "#/definitions/SecretableString"
-            },
-            "write": {
-              "$ref": "#/definitions/SecretableString"
+            "readWriteUrls": {
+              "type": "object",
+              "required": [
+                "read",
+                "write"
+              ],
+              "properties": {
+                "read": {
+                  "type": "string"
+                },
+                "write": {
+                  "type": "string"
+                }
+              }
             }
-          }
+          },
+          "additionalProperties": false
         }
       ]
     },
-    "SecretableString": {
-      "$ref": "https://raw.githubusercontent.com/hasura/ndc-spec/main/ndc-client/tests/json_schema/secret_or_literal.jsonschema"
+    "ObjectTypeV1": {
+      "title": "ObjectTypeV1",
+      "type": "object",
+      "required": [
+        "fields",
+        "name"
+      ],
+      "properties": {
+        "name": {
+          "$ref": "#/definitions/CustomTypeName"
+        },
+        "fields": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/FieldDefinition"
+          }
+        },
+        "globalIdFields": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "$ref": "#/definitions/FieldName"
+          }
+        },
+        "graphql": {
+          "description": "GraphQl configuration for this object.",
+          "anyOf": [
+            {
+              "$ref": "#/definitions/ObjectTypeGraphQLConfiguration"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
     },
-    "TypeName": {
-      "description": "The name of a user-defined Open DDS type.",
+    "CustomTypeName": {
+      "description": "The name of a user-defined type.",
       "type": "string"
     },
     "FieldDefinition": {
@@ -1069,7 +1185,7 @@
           "$ref": "#/definitions/FieldName"
         },
         "type": {
-          "$ref": "#/definitions/Type"
+          "$ref": "#/definitions/TypeReference"
         }
       }
     },
@@ -1077,56 +1193,9 @@
       "description": "The name of a field in a user-defined object type.",
       "type": "string"
     },
-    "Type": {
-      "description": "Reference to an Open DD type.",
-      "anyOf": [
-        {
-          "$ref": "#/definitions/InbuiltType"
-        },
-        {
-          "$ref": "#/definitions/TypeName"
-        }
-      ]
-    },
-    "InbuiltType": {
-      "oneOf": [
-        {
-          "type": "string",
-          "enum": [
-            "ID",
-            "Int",
-            "Float",
-            "Boolean",
-            "String"
-          ]
-        },
-        {
-          "title": "Nullable",
-          "type": "object",
-          "required": [
-            "Nullable"
-          ],
-          "properties": {
-            "Nullable": {
-              "$ref": "#/definitions/Type"
-            }
-          },
-          "additionalProperties": false
-        },
-        {
-          "title": "Array",
-          "type": "object",
-          "required": [
-            "Array"
-          ],
-          "properties": {
-            "Array": {
-              "$ref": "#/definitions/Type"
-            }
-          },
-          "additionalProperties": false
-        }
-      ]
+    "TypeReference": {
+      "description": "A reference to an Open DD type including nullable values and arrays.\nSuffix '!' to indicate a non-nullable reference, and wrap in '[]' to indicate an array.\nEg: '[String!]!' is a non-nullable array of non-nullable strings.",
+      "type": "string"
     },
     "ObjectTypeGraphQLConfiguration": {
       "title": "ObjectTypeGraphQLConfiguration",
@@ -1149,6 +1218,34 @@
     "GraphQlTypeName": {
       "type": "string"
     },
+    "ScalarTypeV1": {
+      "title": "ScalarTypeV1",
+      "type": "object",
+      "required": [
+        "name"
+      ],
+      "properties": {
+        "name": {
+          "description": "The OpenDD name of this type.",
+          "allOf": [
+            {
+              "$ref": "#/definitions/CustomTypeName"
+            }
+          ]
+        },
+        "graphql": {
+          "description": "The name of the GraphQl scalar type to use for",
+          "anyOf": [
+            {
+              "$ref": "#/definitions/ScalarTypeGraphQLConfiguration"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
     "ScalarTypeGraphQLConfiguration": {
       "title": "ScalarTypeGraphQLConfiguration",
       "description": "GraphQL configuration of an Open DD scalar type",
@@ -1167,6 +1264,56 @@
         }
       }
     },
+    "DataConnectorScalarRepresentationV1": {
+      "title": "DataConnectorScalarRepresentationV1",
+      "type": "object",
+      "required": [
+        "dataConnectorName",
+        "dataConnectorScalarType",
+        "representation"
+      ],
+      "properties": {
+        "dataConnectorName": {
+          "$ref": "#/definitions/DataConnectorName"
+        },
+        "dataConnectorScalarType": {
+          "type": "string"
+        },
+        "representation": {
+          "$ref": "#/definitions/TypeName"
+        },
+        "graphql": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/DataConnectorScalarGraphQLConfiguration"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "TypeName": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/InbuiltType"
+        },
+        {
+          "$ref": "#/definitions/CustomTypeName"
+        }
+      ]
+    },
+    "InbuiltType": {
+      "type": "string",
+      "enum": [
+        "ID",
+        "Int",
+        "Float",
+        "Boolean",
+        "String"
+      ]
+    },
     "DataConnectorScalarGraphQLConfiguration": {
       "title": "DataConnectorScalarGraphQLConfiguration",
       "description": "GraphQL configuration of a data connector scalar",
@@ -1176,6 +1323,72 @@
           "anyOf": [
             {
               "$ref": "#/definitions/GraphQlTypeName"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "ModelV1": {
+      "title": "ModelV1",
+      "type": "object",
+      "required": [
+        "filterableFields",
+        "name",
+        "objectType",
+        "orderableFields"
+      ],
+      "properties": {
+        "name": {
+          "$ref": "#/definitions/ModelName"
+        },
+        "objectType": {
+          "description": "The type of the objects of which this model is a collection.",
+          "allOf": [
+            {
+              "$ref": "#/definitions/CustomTypeName"
+            }
+          ]
+        },
+        "globalIdSource": {
+          "default": false,
+          "type": "boolean"
+        },
+        "arguments": {
+          "default": [],
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ArgumentDefinition"
+          }
+        },
+        "source": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/ModelSource"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "filterableFields": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/FilterableField"
+          }
+        },
+        "orderableFields": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/OrderableField"
+          }
+        },
+        "graphql": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/ModelGraphQlDefinition"
             },
             {
               "type": "null"
@@ -1201,7 +1414,7 @@
           "$ref": "#/definitions/ArgumentName"
         },
         "type": {
-          "$ref": "#/definitions/Type"
+          "$ref": "#/definitions/TypeReference"
         }
       }
     },
@@ -1247,23 +1460,19 @@
       }
     },
     "TypeMapping": {
-      "anyOf": [
-        {
-          "title": "ObjectTypeMapping",
+      "title": "TypeMapping",
+      "type": "object",
+      "required": [
+        "fieldMapping"
+      ],
+      "properties": {
+        "fieldMapping": {
           "type": "object",
-          "required": [
-            "fieldMapping"
-          ],
-          "properties": {
-            "fieldMapping": {
-              "type": "object",
-              "additionalProperties": {
-                "$ref": "#/definitions/FieldMapping"
-              }
-            }
+          "additionalProperties": {
+            "$ref": "#/definitions/FieldMapping"
           }
         }
-      ]
+      }
     },
     "FieldMapping": {
       "title": "ObjectFieldMapping",
@@ -1276,6 +1485,113 @@
           "type": "string"
         }
       }
+    },
+    "FilterableField": {
+      "title": "FilterableField",
+      "type": "object",
+      "required": [
+        "fieldName",
+        "operators"
+      ],
+      "properties": {
+        "fieldName": {
+          "$ref": "#/definitions/FieldName"
+        },
+        "operators": {
+          "$ref": "#/definitions/EnableAllOrSpecific_for_OperatorName"
+        }
+      }
+    },
+    "EnableAllOrSpecific_for_OperatorName": {
+      "title": "EnableAllOrSpecific",
+      "oneOf": [
+        {
+          "type": "object",
+          "required": [
+            "enableAll"
+          ],
+          "properties": {
+            "enableAll": {
+              "type": "boolean"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "enableSpecific"
+          ],
+          "properties": {
+            "enableSpecific": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/OperatorName"
+              }
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "OperatorName": {
+      "type": "string"
+    },
+    "OrderableField": {
+      "title": "OrderableField",
+      "type": "object",
+      "required": [
+        "fieldName",
+        "orderByDirections"
+      ],
+      "properties": {
+        "fieldName": {
+          "$ref": "#/definitions/FieldName"
+        },
+        "orderByDirections": {
+          "$ref": "#/definitions/EnableAllOrSpecific_for_OrderByDirection"
+        }
+      }
+    },
+    "EnableAllOrSpecific_for_OrderByDirection": {
+      "title": "EnableAllOrSpecific",
+      "oneOf": [
+        {
+          "type": "object",
+          "required": [
+            "enableAll"
+          ],
+          "properties": {
+            "enableAll": {
+              "type": "boolean"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "enableSpecific"
+          ],
+          "properties": {
+            "enableSpecific": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/OrderByDirection"
+              }
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "OrderByDirection": {
+      "title": "OrderByDirection",
+      "type": "string",
+      "enum": [
+        "Asc",
+        "Desc"
+      ]
     },
     "ModelGraphQlDefinition": {
       "title": "ModelGraphQlDefinition",
@@ -1382,6 +1698,54 @@
         }
       }
     },
+    "CommandV1": {
+      "title": "CommandV1",
+      "type": "object",
+      "required": [
+        "name",
+        "outputType"
+      ],
+      "properties": {
+        "name": {
+          "$ref": "#/definitions/CommandName"
+        },
+        "outputType": {
+          "description": "The type of the objects which is returned as the output.",
+          "allOf": [
+            {
+              "$ref": "#/definitions/TypeReference"
+            }
+          ]
+        },
+        "arguments": {
+          "default": [],
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ArgumentDefinition"
+          }
+        },
+        "source": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/CommandSource"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "graphql": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/CommandGraphQlDefinition"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
     "CommandName": {
       "description": "The name of a command.",
       "type": "string"
@@ -1390,33 +1754,8 @@
       "title": "CommandSource",
       "description": "Description of how a command maps to a particular data connector",
       "type": "object",
-      "oneOf": [
-        {
-          "title": "Function",
-          "type": "object",
-          "required": [
-            "function"
-          ],
-          "properties": {
-            "function": {
-              "type": "string"
-            }
-          }
-        },
-        {
-          "title": "Procedure",
-          "type": "object",
-          "required": [
-            "procedure"
-          ],
-          "properties": {
-            "procedure": {
-              "type": "string"
-            }
-          }
-        }
-      ],
       "required": [
+        "dataConnectorCommand",
         "dataConnectorName"
       ],
       "properties": {
@@ -1425,6 +1764,14 @@
           "allOf": [
             {
               "$ref": "#/definitions/DataConnectorName"
+            }
+          ]
+        },
+        "dataConnectorCommand": {
+          "description": "The function/procedure in the data connector that backs this command.",
+          "allOf": [
+            {
+              "$ref": "#/definitions/DataConnectorCommand"
             }
           ]
         },
@@ -1445,6 +1792,36 @@
           }
         }
       }
+    },
+    "DataConnectorCommand": {
+      "oneOf": [
+        {
+          "title": "Function",
+          "type": "object",
+          "required": [
+            "function"
+          ],
+          "properties": {
+            "function": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "title": "Procedure",
+          "type": "object",
+          "required": [
+            "procedure"
+          ],
+          "properties": {
+            "procedure": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
     },
     "CommandGraphQlDefinition": {
       "title": "CommandGraphQlDefinition",
@@ -1480,27 +1857,63 @@
         "Mutation"
       ]
     },
+    "RelationshipV1": {
+      "title": "RelationshipV1",
+      "type": "object",
+      "required": [
+        "mapping",
+        "name",
+        "source",
+        "target"
+      ],
+      "properties": {
+        "name": {
+          "$ref": "#/definitions/RelationshipName"
+        },
+        "source": {
+          "$ref": "#/definitions/CustomTypeName"
+        },
+        "target": {
+          "$ref": "#/definitions/RelationshipTarget"
+        },
+        "mapping": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/RelationshipMapping"
+          }
+        }
+      }
+    },
     "RelationshipName": {
       "description": "The name of the GraphQL relationship field.",
       "type": "string"
     },
     "RelationshipTarget": {
-      "anyOf": [
+      "oneOf": [
         {
           "title": "ModelRelationshipTarget",
           "type": "object",
           "required": [
-            "modelName",
-            "relationshipType"
+            "model"
           ],
           "properties": {
-            "modelName": {
-              "$ref": "#/definitions/ModelName"
-            },
-            "relationshipType": {
-              "$ref": "#/definitions/RelationshipType"
+            "model": {
+              "type": "object",
+              "required": [
+                "name",
+                "relationshipType"
+              ],
+              "properties": {
+                "name": {
+                  "$ref": "#/definitions/ModelName"
+                },
+                "relationshipType": {
+                  "$ref": "#/definitions/RelationshipType"
+                }
+              }
             }
-          }
+          },
+          "additionalProperties": false
         }
       ]
     },
@@ -1652,20 +2065,102 @@
         }
       ]
     },
+    "TypePermissionsV1": {
+      "title": "TypePermissionsV1",
+      "type": "object",
+      "required": [
+        "permissions",
+        "typeName"
+      ],
+      "properties": {
+        "typeName": {
+          "$ref": "#/definitions/CustomTypeName"
+        },
+        "permissions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/TypePermission"
+          }
+        }
+      }
+    },
+    "TypePermission": {
+      "title": "TypePermission",
+      "type": "object",
+      "required": [
+        "role"
+      ],
+      "properties": {
+        "role": {
+          "$ref": "#/definitions/Role"
+        },
+        "output": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/TypeOutputPermission"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
     "TypeOutputPermission": {
       "title": "TypeOutputPermission",
       "description": "One unit of output permission",
       "type": "object",
       "required": [
-        "fields"
+        "allowedFields"
       ],
       "properties": {
-        "fields": {
+        "allowedFields": {
           "description": "Fields of the type that are accessible for a role",
           "type": "array",
           "items": {
             "$ref": "#/definitions/FieldName"
           }
+        }
+      }
+    },
+    "ModelPermissionsV1": {
+      "title": "ModelPermissionsV1",
+      "type": "object",
+      "required": [
+        "modelName",
+        "permissions"
+      ],
+      "properties": {
+        "modelName": {
+          "$ref": "#/definitions/ModelName"
+        },
+        "permissions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ModelPermission"
+          }
+        }
+      }
+    },
+    "ModelPermission": {
+      "title": "ModelPermission",
+      "type": "object",
+      "required": [
+        "role"
+      ],
+      "properties": {
+        "role": {
+          "$ref": "#/definitions/Role"
+        },
+        "select": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/SelectPermission"
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
       }
     },
@@ -1811,16 +2306,36 @@
         }
       ]
     },
-    "OperatorName": {
-      "type": "string"
+    "CommandPermissionsV1": {
+      "title": "CommandPermissionsV1",
+      "type": "object",
+      "required": [
+        "commandName",
+        "permissions"
+      ],
+      "properties": {
+        "commandName": {
+          "$ref": "#/definitions/CommandName"
+        },
+        "permissions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/CommandPermission"
+          }
+        }
+      }
     },
     "CommandPermission": {
       "title": "CommandPermission",
       "type": "object",
       "required": [
-        "allowExecution"
+        "allowExecution",
+        "role"
       ],
       "properties": {
+        "role": {
+          "$ref": "#/definitions/Role"
+        },
         "allowExecution": {
           "type": "boolean"
         }
