@@ -29,7 +29,8 @@
             "date": {
               "$ref": "#/definitions/CompatibilityDate"
             }
-          }
+          },
+          "additionalProperties": false
         },
         {
           "title": "HasuraHubDataConnector",
@@ -57,7 +58,8 @@
                 "definition": {
                   "$ref": "#/definitions/HasuraHubDataConnectorV1"
                 }
-              }
+              },
+              "additionalProperties": false
             }
           ]
         },
@@ -87,7 +89,8 @@
                 "definition": {
                   "$ref": "#/definitions/AuthConfigV1"
                 }
-              }
+              },
+              "additionalProperties": false
             }
           ]
         }
@@ -118,13 +121,15 @@
             "$ref": "#/definitions/HubDataConnectorRegionConfig"
           }
         }
-      }
+      },
+      "additionalProperties": false
     },
     "DataConnectorName": {
       "description": "The name of a data connector.",
       "type": "string"
     },
     "HubDataConnectorRegionConfig": {
+      "title": "HubDataConnectorRegionConfig",
       "type": "object",
       "required": [
         "configuration",
@@ -133,15 +138,25 @@
       ],
       "properties": {
         "region": {
-          "type": "string"
+          "type": "string",
+          "enum": [
+            "gcp-asia-south1",
+            "gcp-asia-southeast1",
+            "gcp-australia-southeast1",
+            "gcp-europe-west1",
+            "gcp-southamerica-east1",
+            "gcp-us-east4",
+            "gcp-us-west2"
+          ]
         },
         "mode": {
           "$ref": "#/definitions/ConnectorMode"
         },
         "configuration": {
-          "$ref": "https://postgres-configserv.ddn.hasura.app/schema"
+          "$ref": "https://postgres-configserv.ddn.hasura.me/schema"
         }
-      }
+      },
+      "additionalProperties": false
     },
     "ConnectorMode": {
       "type": "string",
@@ -171,7 +186,8 @@
         "mode": {
           "$ref": "#/definitions/AuthModeConfig"
         }
-      }
+      },
+      "additionalProperties": false
     },
     "Role": {
       "type": "string"
@@ -221,7 +237,8 @@
         "method": {
           "$ref": "#/definitions/AuthHookMethod"
         }
-      }
+      },
+      "additionalProperties": false
     },
     "AuthHookMethod": {
       "title": "AuthHookMethod",
@@ -290,7 +307,8 @@
             }
           ]
         }
-      }
+      },
+      "additionalProperties": false
     },
     "JWTClaimsConfig": {
       "title": "JWTClaimsConfig",
@@ -303,7 +321,7 @@
           ],
           "properties": {
             "locations": {
-              "$ref": "#/definitions/ClaimsMap"
+              "$ref": "#/definitions/JWTClaimsMap"
             }
           },
           "additionalProperties": false
@@ -315,34 +333,15 @@
           ],
           "properties": {
             "namespace": {
-              "type": "object",
-              "required": [
-                "claimsFormat",
-                "location"
-              ],
-              "properties": {
-                "claimsFormat": {
-                  "description": "Format in which the Hasura claims will be present.",
-                  "allOf": [
-                    {
-                      "$ref": "#/definitions/JWTClaimsFormat"
-                    }
-                  ]
-                },
-                "location": {
-                  "description": "Pointer to lookup the Hasura claims within the decoded claims.",
-                  "type": "string",
-                  "format": "JSON pointer"
-                }
-              }
+              "$ref": "#/definitions/JWTClaimsNamespace"
             }
           },
           "additionalProperties": false
         }
       ]
     },
-    "ClaimsMap": {
-      "title": "ClaimsMap",
+    "JWTClaimsMap": {
+      "title": "JWTClaimsMap",
       "type": "object",
       "required": [
         "x-hasura-allowed-roles",
@@ -350,15 +349,15 @@
       ],
       "properties": {
         "x-hasura-default-role": {
-          "$ref": "#/definitions/ClaimsMappingEntry_for_Role"
+          "$ref": "#/definitions/JWTClaimsMappingEntry_for_Role"
         },
         "x-hasura-allowed-roles": {
-          "$ref": "#/definitions/ClaimsMappingEntry_for_Array_of_Role"
+          "$ref": "#/definitions/JWTClaimsMappingEntry_for_Array_of_Role"
         }
       }
     },
-    "ClaimsMappingEntry_for_Role": {
-      "title": "ClaimsMappingEntry",
+    "JWTClaimsMappingEntry_for_Role": {
+      "title": "JWTClaimsMappingEntry",
       "oneOf": [
         {
           "description": "Literal value of the claims mapping",
@@ -381,36 +380,41 @@
           ],
           "properties": {
             "path": {
-              "type": "object",
-              "required": [
-                "path"
-              ],
-              "properties": {
-                "path": {
-                  "description": "JSON pointer to find the particular claim in the decoded JWT token.",
-                  "type": "string",
-                  "format": "JSON pointer"
-                },
-                "default": {
-                  "description": "Default value to be used when no value is found when looking up the value using the `path`.",
-                  "anyOf": [
-                    {
-                      "$ref": "#/definitions/Role"
-                    },
-                    {
-                      "type": "null"
-                    }
-                  ]
-                }
-              }
+              "$ref": "#/definitions/JWTClaimsMappingPathEntry_for_Role"
             }
           },
           "additionalProperties": false
         }
       ]
     },
-    "ClaimsMappingEntry_for_Array_of_Role": {
-      "title": "ClaimsMappingEntry",
+    "JWTClaimsMappingPathEntry_for_Role": {
+      "title": "JWTClaimsMappingPathEntry",
+      "type": "object",
+      "required": [
+        "path"
+      ],
+      "properties": {
+        "path": {
+          "description": "JSON pointer to find the particular claim in the decoded JWT token.",
+          "type": "string",
+          "format": "JSON pointer"
+        },
+        "default": {
+          "description": "Default value to be used when no value is found when looking up the value using the `path`.",
+          "anyOf": [
+            {
+              "$ref": "#/definitions/Role"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "JWTClaimsMappingEntry_for_Array_of_Role": {
+      "title": "JWTClaimsMappingEntry",
       "oneOf": [
         {
           "description": "Literal value of the claims mapping",
@@ -436,35 +440,40 @@
           ],
           "properties": {
             "path": {
-              "type": "object",
-              "required": [
-                "path"
-              ],
-              "properties": {
-                "path": {
-                  "description": "JSON pointer to find the particular claim in the decoded JWT token.",
-                  "type": "string",
-                  "format": "JSON pointer"
-                },
-                "default": {
-                  "description": "Default value to be used when no value is found when looking up the value using the `path`.",
-                  "type": [
-                    "array",
-                    "null"
-                  ],
-                  "items": {
-                    "$ref": "#/definitions/Role"
-                  }
-                }
-              }
+              "$ref": "#/definitions/JWTClaimsMappingPathEntry_for_Array_of_Role"
             }
           },
           "additionalProperties": false
         }
       ]
     },
-    "ClaimsMappingEntry_for_SessionVariableValue": {
-      "title": "ClaimsMappingEntry",
+    "JWTClaimsMappingPathEntry_for_Array_of_Role": {
+      "title": "JWTClaimsMappingPathEntry",
+      "type": "object",
+      "required": [
+        "path"
+      ],
+      "properties": {
+        "path": {
+          "description": "JSON pointer to find the particular claim in the decoded JWT token.",
+          "type": "string",
+          "format": "JSON pointer"
+        },
+        "default": {
+          "description": "Default value to be used when no value is found when looking up the value using the `path`.",
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "$ref": "#/definitions/Role"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "JWTClaimsMappingEntry_for_SessionVariableValue": {
+      "title": "JWTClaimsMappingEntry",
       "oneOf": [
         {
           "description": "Literal value of the claims mapping",
@@ -487,28 +496,7 @@
           ],
           "properties": {
             "path": {
-              "type": "object",
-              "required": [
-                "path"
-              ],
-              "properties": {
-                "path": {
-                  "description": "JSON pointer to find the particular claim in the decoded JWT token.",
-                  "type": "string",
-                  "format": "JSON pointer"
-                },
-                "default": {
-                  "description": "Default value to be used when no value is found when looking up the value using the `path`.",
-                  "anyOf": [
-                    {
-                      "$ref": "#/definitions/SessionVariableValue"
-                    },
-                    {
-                      "type": "null"
-                    }
-                  ]
-                }
-              }
+              "$ref": "#/definitions/JWTClaimsMappingPathEntry_for_SessionVariableValue"
             }
           },
           "additionalProperties": false
@@ -517,6 +505,56 @@
     },
     "SessionVariableValue": {
       "type": "string"
+    },
+    "JWTClaimsMappingPathEntry_for_SessionVariableValue": {
+      "title": "JWTClaimsMappingPathEntry",
+      "type": "object",
+      "required": [
+        "path"
+      ],
+      "properties": {
+        "path": {
+          "description": "JSON pointer to find the particular claim in the decoded JWT token.",
+          "type": "string",
+          "format": "JSON pointer"
+        },
+        "default": {
+          "description": "Default value to be used when no value is found when looking up the value using the `path`.",
+          "anyOf": [
+            {
+              "$ref": "#/definitions/SessionVariableValue"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "JWTClaimsNamespace": {
+      "title": "JWTClaimsNamespace",
+      "type": "object",
+      "required": [
+        "claimsFormat",
+        "location"
+      ],
+      "properties": {
+        "claimsFormat": {
+          "description": "Format in which the Hasura claims will be present.",
+          "allOf": [
+            {
+              "$ref": "#/definitions/JWTClaimsFormat"
+            }
+          ]
+        },
+        "location": {
+          "description": "Pointer to lookup the Hasura claims within the decoded claims.",
+          "type": "string",
+          "format": "JSON pointer"
+        }
+      },
+      "additionalProperties": false
     },
     "JWTClaimsFormat": {
       "title": "JWTClaimsFormat",
@@ -554,9 +592,11 @@
                 "BearerAuthorization"
               ]
             }
-          }
+          },
+          "additionalProperties": false
         },
         {
+          "title": "JWTCookieLocation",
           "description": "Get the token from the Cookie header under the specificied cookie name.",
           "type": "object",
           "required": [
@@ -573,9 +613,11 @@
             "name": {
               "type": "string"
             }
-          }
+          },
+          "additionalProperties": false
         },
         {
+          "title": "JWTHeaderLocation",
           "description": "Custom header from where the header should be parsed from.",
           "type": "object",
           "required": [
@@ -592,7 +634,8 @@
             "name": {
               "type": "string"
             }
-          }
+          },
+          "additionalProperties": false
         }
       ]
     },
@@ -643,7 +686,8 @@
         "key": {
           "$ref": "#/definitions/SecretableString"
         }
-      }
+      },
+      "additionalProperties": false
     },
     "Algorithm": {
       "title": "JWTAlgorithm",
@@ -765,7 +809,8 @@
                 "definition": {
                   "$ref": "#/definitions/DataConnectorV1"
                 }
-              }
+              },
+              "additionalProperties": false
             }
           ]
         },
@@ -796,7 +841,8 @@
                 "definition": {
                   "$ref": "#/definitions/ObjectTypeV1"
                 }
-              }
+              },
+              "additionalProperties": false
             }
           ]
         },
@@ -827,7 +873,8 @@
                 "definition": {
                   "$ref": "#/definitions/ScalarTypeV1"
                 }
-              }
+              },
+              "additionalProperties": false
             }
           ]
         },
@@ -858,7 +905,8 @@
                 "definition": {
                   "$ref": "#/definitions/DataConnectorScalarRepresentationV1"
                 }
-              }
+              },
+              "additionalProperties": false
             }
           ]
         },
@@ -889,7 +937,8 @@
                 "definition": {
                   "$ref": "#/definitions/ModelV1"
                 }
-              }
+              },
+              "additionalProperties": false
             }
           ]
         },
@@ -920,7 +969,8 @@
                 "definition": {
                   "$ref": "#/definitions/CommandV1"
                 }
-              }
+              },
+              "additionalProperties": false
             }
           ]
         },
@@ -950,7 +1000,8 @@
                 "definition": {
                   "$ref": "#/definitions/RelationshipV1"
                 }
-              }
+              },
+              "additionalProperties": false
             }
           ]
         },
@@ -981,7 +1032,8 @@
                 "definition": {
                   "$ref": "#/definitions/TypePermissionsV1"
                 }
-              }
+              },
+              "additionalProperties": false
             }
           ]
         },
@@ -1012,7 +1064,8 @@
                 "definition": {
                   "$ref": "#/definitions/ModelPermissionsV1"
                 }
-              }
+              },
+              "additionalProperties": false
             }
           ]
         },
@@ -1043,7 +1096,8 @@
                 "definition": {
                   "$ref": "#/definitions/CommandPermissionsV1"
                 }
-              }
+              },
+              "additionalProperties": false
             }
           ]
         }
@@ -1085,7 +1139,8 @@
             }
           ]
         }
-      }
+      },
+      "additionalProperties": false
     },
     "DataConnectorUrl": {
       "title": "DataConnectorUrl",
@@ -1103,31 +1158,35 @@
           "additionalProperties": false
         },
         {
-          "title": "ReadWriteUrls",
           "type": "object",
           "required": [
             "readWriteUrls"
           ],
           "properties": {
             "readWriteUrls": {
-              "type": "object",
-              "required": [
-                "read",
-                "write"
-              ],
-              "properties": {
-                "read": {
-                  "type": "string"
-                },
-                "write": {
-                  "type": "string"
-                }
-              }
+              "$ref": "#/definitions/ReadWriteUrls"
             }
           },
           "additionalProperties": false
         }
       ]
+    },
+    "ReadWriteUrls": {
+      "title": "ReadWriteUrls",
+      "type": "object",
+      "required": [
+        "read",
+        "write"
+      ],
+      "properties": {
+        "read": {
+          "type": "string"
+        },
+        "write": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
     },
     "ObjectTypeV1": {
       "title": "ObjectTypeV1",
@@ -1166,7 +1225,8 @@
             }
           ]
         }
-      }
+      },
+      "additionalProperties": false
     },
     "CustomTypeName": {
       "description": "The name of a user-defined type.",
@@ -1187,7 +1247,8 @@
         "type": {
           "$ref": "#/definitions/TypeReference"
         }
-      }
+      },
+      "additionalProperties": false
     },
     "FieldName": {
       "description": "The name of a field in a user-defined object type.",
@@ -1213,7 +1274,8 @@
             }
           ]
         }
-      }
+      },
+      "additionalProperties": false
     },
     "GraphQlTypeName": {
       "type": "string"
@@ -1244,7 +1306,8 @@
             }
           ]
         }
-      }
+      },
+      "additionalProperties": false
     },
     "ScalarTypeGraphQLConfiguration": {
       "title": "ScalarTypeGraphQLConfiguration",
@@ -1262,7 +1325,8 @@
             }
           ]
         }
-      }
+      },
+      "additionalProperties": false
     },
     "DataConnectorScalarRepresentationV1": {
       "title": "DataConnectorScalarRepresentationV1",
@@ -1292,7 +1356,8 @@
             }
           ]
         }
-      }
+      },
+      "additionalProperties": false
     },
     "TypeName": {
       "anyOf": [
@@ -1329,7 +1394,8 @@
             }
           ]
         }
-      }
+      },
+      "additionalProperties": false
     },
     "ModelV1": {
       "title": "ModelV1",
@@ -1395,7 +1461,8 @@
             }
           ]
         }
-      }
+      },
+      "additionalProperties": false
     },
     "ModelName": {
       "description": "The name of data model.",
@@ -1416,7 +1483,8 @@
         "type": {
           "$ref": "#/definitions/TypeReference"
         }
-      }
+      },
+      "additionalProperties": false
     },
     "ArgumentName": {
       "type": "string"
@@ -1457,7 +1525,8 @@
             "type": "string"
           }
         }
-      }
+      },
+      "additionalProperties": false
     },
     "TypeMapping": {
       "title": "TypeMapping",
@@ -1472,7 +1541,8 @@
             "$ref": "#/definitions/FieldMapping"
           }
         }
-      }
+      },
+      "additionalProperties": false
     },
     "FieldMapping": {
       "title": "ObjectFieldMapping",
@@ -1484,7 +1554,8 @@
         "column": {
           "type": "string"
         }
-      }
+      },
+      "additionalProperties": false
     },
     "FilterableField": {
       "title": "FilterableField",
@@ -1500,7 +1571,8 @@
         "operators": {
           "$ref": "#/definitions/EnableAllOrSpecific_for_OperatorName"
         }
-      }
+      },
+      "additionalProperties": false
     },
     "EnableAllOrSpecific_for_OperatorName": {
       "title": "EnableAllOrSpecific",
@@ -1551,7 +1623,8 @@
         "orderByDirections": {
           "$ref": "#/definitions/EnableAllOrSpecific_for_OrderByDirection"
         }
-      }
+      },
+      "additionalProperties": false
     },
     "EnableAllOrSpecific_for_OrderByDirection": {
       "title": "EnableAllOrSpecific",
@@ -1648,7 +1721,8 @@
             }
           ]
         }
-      }
+      },
+      "additionalProperties": false
     },
     "SelectUniqueGraphQlDefinition": {
       "title": "SelectUniqueGraphQlDefinition",
@@ -1674,7 +1748,8 @@
             "$ref": "#/definitions/FieldName"
           }
         }
-      }
+      },
+      "additionalProperties": false
     },
     "GraphQlFieldName": {
       "description": "The name of a GraphQL object field.",
@@ -1696,7 +1771,8 @@
             }
           ]
         }
-      }
+      },
+      "additionalProperties": false
     },
     "CommandV1": {
       "title": "CommandV1",
@@ -1744,7 +1820,8 @@
             }
           ]
         }
-      }
+      },
+      "additionalProperties": false
     },
     "CommandName": {
       "description": "The name of a command.",
@@ -1791,7 +1868,8 @@
             "type": "string"
           }
         }
-      }
+      },
+      "additionalProperties": false
     },
     "DataConnectorCommand": {
       "oneOf": [
@@ -1848,7 +1926,8 @@
             }
           ]
         }
-      }
+      },
+      "additionalProperties": false
     },
     "GraphQlRootFieldKind": {
       "type": "string",
@@ -1882,7 +1961,8 @@
             "$ref": "#/definitions/RelationshipMapping"
           }
         }
-      }
+      },
+      "additionalProperties": false
     },
     "RelationshipName": {
       "description": "The name of the GraphQL relationship field.",
@@ -1891,31 +1971,35 @@
     "RelationshipTarget": {
       "oneOf": [
         {
-          "title": "ModelRelationshipTarget",
           "type": "object",
           "required": [
             "model"
           ],
           "properties": {
             "model": {
-              "type": "object",
-              "required": [
-                "name",
-                "relationshipType"
-              ],
-              "properties": {
-                "name": {
-                  "$ref": "#/definitions/ModelName"
-                },
-                "relationshipType": {
-                  "$ref": "#/definitions/RelationshipType"
-                }
-              }
+              "$ref": "#/definitions/ModelRelationshipTarget"
             }
           },
           "additionalProperties": false
         }
       ]
+    },
+    "ModelRelationshipTarget": {
+      "title": "ModelRelationshipTarget",
+      "type": "object",
+      "required": [
+        "name",
+        "relationshipType"
+      ],
+      "properties": {
+        "name": {
+          "$ref": "#/definitions/ModelName"
+        },
+        "relationshipType": {
+          "$ref": "#/definitions/RelationshipType"
+        }
+      },
+      "additionalProperties": false
     },
     "RelationshipType": {
       "title": "RelationshipType",
@@ -1951,7 +2035,8 @@
         "target": {
           "$ref": "#/definitions/RelationshipMappingTarget"
         }
-      }
+      },
+      "additionalProperties": false
     },
     "RelationshipMappingSource": {
       "title": "RelationshipMappingSource",
@@ -2029,7 +2114,8 @@
         "fieldName": {
           "$ref": "#/definitions/FieldName"
         }
-      }
+      },
+      "additionalProperties": false
     },
     "RelationshipMappingTarget": {
       "title": "RelationshipMappingTarget",
@@ -2082,7 +2168,8 @@
             "$ref": "#/definitions/TypePermission"
           }
         }
-      }
+      },
+      "additionalProperties": false
     },
     "TypePermission": {
       "title": "TypePermission",
@@ -2104,7 +2191,8 @@
             }
           ]
         }
-      }
+      },
+      "additionalProperties": false
     },
     "TypeOutputPermission": {
       "title": "TypeOutputPermission",
@@ -2121,7 +2209,8 @@
             "$ref": "#/definitions/FieldName"
           }
         }
-      }
+      },
+      "additionalProperties": false
     },
     "ModelPermissionsV1": {
       "title": "ModelPermissionsV1",
@@ -2140,7 +2229,8 @@
             "$ref": "#/definitions/ModelPermission"
           }
         }
-      }
+      },
+      "additionalProperties": false
     },
     "ModelPermission": {
       "title": "ModelPermission",
@@ -2162,7 +2252,8 @@
             }
           ]
         }
-      }
+      },
+      "additionalProperties": false
     },
     "SelectPermission": {
       "title": "SelectPermission",
@@ -2179,7 +2270,8 @@
             }
           ]
         }
-      }
+      },
+      "additionalProperties": false
     },
     "NullableModelPredicate": {
       "anyOf": [
@@ -2194,67 +2286,25 @@
     "ModelPredicate": {
       "oneOf": [
         {
-          "title": "FieldComparison",
           "type": "object",
           "required": [
             "fieldComparison"
           ],
           "properties": {
             "fieldComparison": {
-              "type": "object",
-              "required": [
-                "field",
-                "operator"
-              ],
-              "properties": {
-                "field": {
-                  "$ref": "#/definitions/FieldName"
-                },
-                "operator": {
-                  "$ref": "#/definitions/OperatorName"
-                },
-                "value": {
-                  "anyOf": [
-                    {
-                      "$ref": "#/definitions/ValueExpression"
-                    },
-                    {
-                      "type": "null"
-                    }
-                  ]
-                }
-              }
+              "$ref": "#/definitions/FieldComparisonPredicate"
             }
           },
           "additionalProperties": false
         },
         {
-          "title": "Relationship",
           "type": "object",
           "required": [
             "relationship"
           ],
           "properties": {
             "relationship": {
-              "type": "object",
-              "required": [
-                "name"
-              ],
-              "properties": {
-                "name": {
-                  "$ref": "#/definitions/RelationshipName"
-                },
-                "predicate": {
-                  "anyOf": [
-                    {
-                      "$ref": "#/definitions/ModelPredicate"
-                    },
-                    {
-                      "type": "null"
-                    }
-                  ]
-                }
-              }
+              "$ref": "#/definitions/RelationshipPredicate"
             }
           },
           "additionalProperties": false
@@ -2306,6 +2356,56 @@
         }
       ]
     },
+    "FieldComparisonPredicate": {
+      "title": "FieldComparisonPredicate",
+      "type": "object",
+      "required": [
+        "field",
+        "operator"
+      ],
+      "properties": {
+        "field": {
+          "$ref": "#/definitions/FieldName"
+        },
+        "operator": {
+          "$ref": "#/definitions/OperatorName"
+        },
+        "value": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/ValueExpression"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "RelationshipPredicate": {
+      "title": "RelationshipPredicate",
+      "type": "object",
+      "required": [
+        "name"
+      ],
+      "properties": {
+        "name": {
+          "$ref": "#/definitions/RelationshipName"
+        },
+        "predicate": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/ModelPredicate"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
     "CommandPermissionsV1": {
       "title": "CommandPermissionsV1",
       "type": "object",
@@ -2323,7 +2423,8 @@
             "$ref": "#/definitions/CommandPermission"
           }
         }
-      }
+      },
+      "additionalProperties": false
     },
     "CommandPermission": {
       "title": "CommandPermission",
@@ -2339,7 +2440,8 @@
         "allowExecution": {
           "type": "boolean"
         }
-      }
+      },
+      "additionalProperties": false
     }
   }
 }
