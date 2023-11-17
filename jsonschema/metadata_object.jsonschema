@@ -938,7 +938,17 @@
           },
           "allOf": [
             {
-              "$ref": "https://raw.githubusercontent.com/hasura/ndc-spec/v0.1.0-rc.9/ndc-client/tests/json_schema/schema_response.jsonschema"
+              "$ref": "https://raw.githubusercontent.com/hasura/ndc-spec/v0.1.0-rc.11/ndc-client/tests/json_schema/schema_response.jsonschema"
+            }
+          ]
+        },
+        "capabilities": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/CapabilitiesResponse"
+            },
+            {
+              "type": "null"
             }
           ]
         }
@@ -983,6 +993,9 @@
         }
       },
       "additionalProperties": false
+    },
+    "CapabilitiesResponse": {
+      "$ref": "https://raw.githubusercontent.com/hasura/ndc-spec/v0.1.0-rc.11/ndc-client/tests/json_schema/capabilities_response.jsonschema"
     },
     "ObjectTypeV1": {
       "title": "ObjectTypeV1",
@@ -1890,7 +1903,8 @@
           "type": "array",
           "items": {
             "$ref": "#/definitions/FieldName"
-          }
+          },
+          "uniqueItems": true
         }
       },
       "additionalProperties": false
