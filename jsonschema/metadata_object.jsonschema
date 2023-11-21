@@ -1064,7 +1064,18 @@
       "type": "object",
       "properties": {
         "typeName": {
-          "description": "The name of the GraphQl type to use for this object.",
+          "description": "The name to use for the GraphQL type representation of this object type.",
+          "anyOf": [
+            {
+              "$ref": "#/definitions/GraphQlTypeName"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "inputTypeName": {
+          "description": "The name to use for the GraphQL input type representation of this object type.",
           "anyOf": [
             {
               "$ref": "#/definitions/GraphQlTypeName"
